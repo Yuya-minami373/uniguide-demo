@@ -20,6 +20,8 @@ interface Task {
   assignee_name: string;
   completed_at: string | null;
   effort_label: string | null;
+  sub_assignee_id: number | null;
+  sub_assignee_name: string | null;
 }
 
 interface StaffUser {
@@ -95,6 +97,15 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
     }
   }, [activeTab, today]);
 
+  const [ganttScrollLeft, setGanttScrollLeft] = useState(0);
+  useEffect(() => {
+    const el = ganttScrollRef.current;
+    if (!el) return;
+    const handler = () => setGanttScrollLeft(el.scrollLeft);
+    el.addEventListener("scroll", handler, { passive: true });
+    return () => el.removeEventListener("scroll", handler);
+  }, [activeTab]);
+
   const DAYS = 28;
   const dayOffset = -2;
   const CELL = 38;
@@ -143,13 +154,13 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
       daysToVote={daysToVote}
       demoMode={demoMode}
     >
-      <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#f0f5ff" }}>
+      <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#f8fafc" }}>
 
         {/* ━━━ Page Header ━━━ */}
         <div className="bg-white border-b border-gray-200 px-6 py-2">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">Manager Dashboard</p>
+              <p className="text-[10px] text-gray-400 font-medium tracking-wide">係長ダッシュボード</p>
               <h1 className="text-base font-bold text-gray-900 leading-tight">全職員進捗ボード</h1>
             </div>
 
@@ -178,28 +189,25 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 mt-2">
+          <div className="flex gap-2 mt-2">
             {[
-              { key: "morning",  label: "Today's UniGuide", icon: "☀️" },
-              { key: "gantt",    label: "ガントチャート",  icon: "📊" },
-              { key: "roadmap",  label: "ロードマップ",   icon: "🗺️" },
+              { key: "morning",  label: "Today's UniGuide" },
+              { key: "gantt",    label: "ガントチャート" },
+              { key: "roadmap",  label: "ロードマップ" },
               ...(isUnipoll ? [
-                { key: "calendar", label: "実績カレンダー", icon: "🗓" },
-                { key: "report",   label: "UniReport",      icon: "📈" },
+                { key: "calendar", label: "実績カレンダー" },
+                { key: "report",   label: "UniReport" },
               ] : []),
             ].map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as "morning" | "gantt" | "roadmap" | "calendar" | "report")}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${
                   activeTab === tab.key
-                    ? tab.key === "calendar" || tab.key === "report"
-                      ? "bg-slate-800 text-white shadow-sm"
-                      : "bg-blue-600 text-white shadow-sm"
-                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                    : "bg-white text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-600"
                 }`}
               >
-                <span>{tab.icon}</span>
                 {tab.label}
               </button>
             ))}
@@ -257,7 +265,7 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
                       <>
                         <div className="w-px h-8 bg-slate-100 shrink-0" />
                         <div className="shrink-0 flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse shrink-0" />
+                          <span className="w-2 h-2 rounded-full bg-red-400  shrink-0" />
                           <div>
                             <p className="text-[10px] text-red-400 mb-0.5">着手遅れ</p>
                             <p className="text-base font-bold text-red-500 tabular-nums leading-none">{overdueCount}<span className="text-xs font-normal text-slate-400">件</span></p>
@@ -282,246 +290,212 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
                 );
               })()}
 
-              {/* ━━━ アラート + 受電サマリー 横並び ━━━ */}
-              <div className="grid grid-cols-2 gap-4">
-
-                {/* 要対応アラート */}
-                {(overdueUntouched.length > 0 || urgentTasks.length > 0) ? (
-                  <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
-                      <span className="text-xs font-bold text-red-700">要対応アラート</span>
-                      <span className="ml-auto text-[10px] text-gray-400">下記リストで確認 →</span>
-                    </div>
-                    <div className="flex items-center gap-5">
-                      {overdueUntouched.length > 0 && (
-                        <div>
-                          <div className="flex items-baseline gap-0.5">
-                            <span className="text-2xl font-black text-amber-500 tabular-nums leading-none">{overdueUntouched.length}</span>
-                            <span className="text-sm font-black text-amber-500">件</span>
-                          </div>
-                          <p className="text-[10px] font-bold text-amber-600">着手遅れ</p>
-                        </div>
-                      )}
-                      {urgentTasks.length > 0 && (
-                        <div>
-                          <div className="flex items-baseline gap-0.5">
-                            <span className="text-2xl font-black text-red-500 tabular-nums leading-none">{urgentTasks.length}</span>
-                            <span className="text-sm font-black text-red-500">件</span>
-                          </div>
-                          <p className="text-[10px] font-bold text-red-600">期限アラート</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center gap-2">
-                    <span className="text-emerald-500">✅</span>
-                    <p className="text-xs font-semibold text-emerald-700">着手遅れ・期限アラートなし</p>
-                  </div>
-                )}
-
-                {/* 受電記録サマリー */}
-                {callStats ? (
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+              {/* ② プロジェクト別進捗 */}
+              {(() => {
+                const cats: Record<string, typeof tasks> = {};
+                tasks.forEach(t => {
+                  if (!cats[t.category]) cats[t.category] = [];
+                  cats[t.category].push(t);
+                });
+                const catNames = Object.keys(cats);
+                return (
+                  <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
-                      <span className="text-sm">📞</span>
-                      <h2 className="font-bold text-gray-800 text-xs">受電記録サマリー</h2>
-                      <Link href="/calls" className="ml-auto text-[10px] text-blue-500 hover:text-blue-700 font-semibold transition">
-                        記録する →
-                      </Link>
+                      <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                      <h2 className="font-bold text-gray-800 text-sm">プロジェクト別進捗</h2>
+                      <span className="ml-auto text-[10px] text-gray-400">{catNames.length}件</span>
                     </div>
-                    <div className="px-4 py-2.5 flex items-center gap-4 flex-1">
-                      <div className="shrink-0">
-                        <p className="text-[10px] text-gray-400 mb-0.5">総受電</p>
-                        <div className="flex items-baseline gap-0.5">
-                          <span className="text-2xl font-black text-slate-700 tabular-nums leading-none">{callStats.total}</span>
-                          <span className="text-xs font-bold text-slate-500">件</span>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        {callStats.byCategory.filter(c => c.count > 0).slice(0, 3).map((c, i) => (
-                          <div key={i} className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1">
-                            <p className="text-[9px] text-gray-400 truncate max-w-[100px]">{c.name}</p>
-                            <p className="text-sm font-black text-slate-700 tabular-nums leading-none">
-                              {c.count}<span className="text-[9px] font-normal text-slate-400 ml-0.5">件</span>
-                            </p>
-                          </div>
-                        ))}
-                        {callStats.total === 0 && <p className="text-xs text-gray-400">まだ記録がありません</p>}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 flex items-center justify-center">
-                    <p className="text-xs text-gray-400">受電記録を読み込み中...</p>
-                  </div>
-                )}
-              </div>
-
-              {/* ② 職員別進捗（最重要 — 最上部） */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-slate-500" />
-                  <h2 className="font-bold text-gray-800 text-sm">職員別進捗</h2>
-                  <span className="ml-auto text-[10px] text-gray-400">{staffUsers.length}名</span>
-                </div>
-                <div className="divide-y divide-gray-50">
-                  {staffUsers.map(staff => {
-                    const staffTasks = tasks.filter(t => t.assignee_id === staff.id);
-                    const done = staffTasks.filter(t => t.status === "完了").length;
-                    const doing = staffTasks.filter(t => t.status === "進行中").length;
-                    const waiting = staffTasks.filter(t => t.status === "確認待ち").length;
-                    const todo = staffTasks.filter(t => t.status === "未着手").length;
-                    const pct = staffTasks.length > 0 ? Math.round((done / staffTasks.length) * 100) : 0;
-                    const hasUrgent = urgentTasks.some(t => t.assignee_id === staff.id);
-                    const hasOverdue = overdueUntouched.some(t => t.assignee_id === staff.id);
-                    return (
-                      <div key={staff.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/60 transition">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
-                          {staff.name.charAt(0)}
-                        </div>
-                        <div className="w-32 shrink-0">
-                          <div className="flex items-center gap-1.5">
-                            <p className="text-sm font-bold text-gray-800">{staff.name}</p>
-                            {hasUrgent && <span className="w-1.5 h-1.5 rounded-full bg-red-500" title="期限アラートあり" />}
-                            {hasOverdue && <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-full">遅れ</span>}
-                          </div>
-                          <p className="text-[11px] text-gray-400">{staff.category}</p>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex justify-between text-[10px] text-gray-400 mb-1">
-                            <span>{staffTasks.length}タスク</span>
-                            <span className="font-semibold text-gray-600">{pct}%</span>
-                          </div>
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full flex">
-                              <div className="bg-emerald-500 rounded-l-full transition-all" style={{ width: `${pct}%` }} />
-                              <div className="bg-blue-400 transition-all" style={{ width: `${staffTasks.length > 0 ? Math.round((doing / staffTasks.length) * 100) : 0}%` }} />
+                    <div className="divide-y divide-gray-50">
+                      {catNames.map(cat => {
+                        const catTasks = cats[cat];
+                        const done = catTasks.filter(t => t.status === "完了").length;
+                        const doing = catTasks.filter(t => t.status === "進行中").length;
+                        const waiting = catTasks.filter(t => t.status === "確認待ち").length;
+                        const todo = catTasks.filter(t => t.status === "未着手").length;
+                        const pct = catTasks.length > 0 ? Math.round((done / catTasks.length) * 100) : 0;
+                        const hasOverdue = catTasks.some(t => t.status === "未着手" && t.due_date && t.due_date < today);
+                        const tomorrowStr = new Date(new Date(today + "T00:00:00").getTime() + 86400000).toISOString().split("T")[0];
+                        const hasUrgent = catTasks.some(t => (t.due_date === today || t.due_date === tomorrowStr) && t.status !== "完了");
+                        const assignees = [...new Set(catTasks.map(t => t.assignee_name?.split(" ")[0]).filter(Boolean))];
+                        return (
+                          <div key={cat} className="flex items-center gap-4 px-5 py-3 hover:bg-gray-50/60 transition">
+                            <div className="w-28 shrink-0">
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-sm font-bold text-gray-800">{cat}</p>
+                                {hasUrgent && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" title="期限アラートあり" />}
+                                {hasOverdue && <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-full shrink-0">遅れ</span>}
+                              </div>
+                              <p className="text-[10px] text-gray-400 truncate">{assignees.join("・")}</p>
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                                <span>{catTasks.length}タスク</span>
+                                <span className="font-semibold text-gray-600">{pct}%</span>
+                              </div>
+                              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full flex">
+                                  <div className="bg-emerald-500 rounded-l-full transition-all" style={{ width: `${pct}%` }} />
+                                  <div className="bg-blue-400 transition-all" style={{ width: `${catTasks.length > 0 ? Math.round((doing / catTasks.length) * 100) : 0}%` }} />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex gap-1.5 shrink-0 justify-end" style={{ width: 240 }}>
+                              {done > 0 && <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">完了 {done}</span>}
+                              {doing > 0 && <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold">進行中 {doing}</span>}
+                              {waiting > 0 && <span className="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full font-bold">確認待 {waiting}</span>}
+                              {todo > 0 && <span className="text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full font-bold">未着手 {todo}</span>}
                             </div>
                           </div>
-                        </div>
-                        <div className="flex gap-1.5 shrink-0">
-                          {done > 0 && <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">完了 {done}</span>}
-                          {doing > 0 && <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold">進行中 {doing}</span>}
-                          {waiting > 0 && <span className="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full font-bold">確認待 {waiting}</span>}
-                          {todo > 0 && <span className="text-[10px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full font-bold">未着手 {todo}</span>}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* ② 着手遅れ（UniGuide固有機能 — 強調表示） + 期限アラート + 進行中 */}
-              <div className="grid grid-cols-3 gap-4">
-
-                {/* 着手遅れ（強調） */}
-                <div className={`rounded-2xl shadow-sm overflow-hidden ${overdueUntouched.length > 0 ? "bg-amber-50 border-2 border-amber-300" : "bg-white border border-gray-200"}`}>
-                  <div className={`px-4 py-3 border-b flex items-center gap-2 ${overdueUntouched.length > 0 ? "border-amber-200" : "border-gray-100"}`}>
-                    <span className={`w-2 h-2 rounded-full ${overdueUntouched.length > 0 ? "bg-amber-500 animate-pulse" : "bg-amber-300"}`} />
-                    <h2 className="font-bold text-gray-800 text-sm">着手遅れ</h2>
-                    <span className="text-[9px] text-gray-400 ml-1">期限超過・未着手</span>
-                    {overdueUntouched.length > 0 && (
-                      <span className="ml-auto text-[10px] bg-amber-500 text-white font-bold px-2 py-0.5 rounded-full">
-                        {overdueUntouched.length}件
-                      </span>
-                    )}
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="divide-y divide-amber-100">
-                    {overdueUntouched.length === 0 ? (
-                      <div className="py-8 text-center">
-                        <p className="text-2xl mb-1">✅</p>
-                        <p className="text-xs text-gray-400">着手遅れなし</p>
-                      </div>
-                    ) : overdueUntouched.map(task => (
-                      <Link key={task.id} href={`/tasks/${task.id}`}>
-                        <div className="flex items-center gap-2.5 px-4 py-3 hover:bg-amber-100/50 transition">
-                          <div className="shrink-0">
-                            <p className="text-[10px] text-red-500 font-bold tabular-nums">{formatMMDD(task.due_date)}</p>
-                            <p className="text-[9px] text-gray-400">{task.assignee_name.split(" ")[0]}</p>
-                          </div>
-                          <span className="text-sm text-gray-800 font-medium flex-1 truncate">{task.title}</span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
+                );
+              })()}
 
-                {/* 期限アラート */}
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                    <h2 className="font-bold text-gray-800 text-sm">期限アラート</h2>
-                    {urgentTasks.length > 0 && (
+              {/* ② 要対応 + 進行中 + 完了タスク — 3カラム */}
+              <div className="grid grid-cols-3 gap-3">
+
+                {/* 要対応（着手遅れ + 期限アラート統合） */}
+                <div className={`rounded-2xl shadow-sm overflow-hidden ${(overdueUntouched.length > 0 || urgentTasks.length > 0) ? "bg-white border border-red-200" : "bg-white border border-gray-200"}`}>
+                  <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${(overdueUntouched.length > 0 || urgentTasks.length > 0) ? "bg-red-500" : "bg-gray-300"}`} />
+                    <h2 className="font-bold text-gray-800 text-sm">要対応</h2>
+                    {(overdueUntouched.length + urgentTasks.length) > 0 && (
                       <span className="ml-auto text-[10px] bg-red-100 text-red-600 font-bold px-2 py-0.5 rounded-full">
-                        {urgentTasks.length}件
+                        {overdueUntouched.length + urgentTasks.length}件
                       </span>
                     )}
                   </div>
                   <div className="divide-y divide-gray-50">
-                    {urgentTasks.length === 0 ? (
-                      <div className="py-8 text-center">
-                        <p className="text-2xl mb-1">✅</p>
-                        <p className="text-xs text-gray-400">今日・明日の期限なし</p>
+                    {overdueUntouched.length === 0 && urgentTasks.length === 0 ? (
+                      <div className="py-6 text-center">
+                        <p className="text-xs text-gray-400">要対応タスクなし</p>
                       </div>
-                    ) : urgentTasks.map(task => (
-                      <Link key={task.id} href={`/tasks/${task.id}`}>
-                        <div className="flex items-center gap-2.5 px-4 py-3 hover:bg-red-50/40 transition group">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white shrink-0 ${
-                            task.due_date === today ? "bg-red-500" : "bg-amber-400"
-                          }`}>
-                            {task.due_date === today ? "今日" : "明日"}
-                          </span>
-                          <span className="text-sm text-gray-800 font-medium flex-1 truncate">{task.title}</span>
-                          <span className="text-[11px] text-gray-400 shrink-0">{task.assignee_name.split(" ")[0]}</span>
-                        </div>
-                      </Link>
-                    ))}
+                    ) : (
+                      <>
+                        {overdueUntouched.map(task => (
+                          <Link key={task.id} href={`/tasks/${task.id}`}>
+                            <div className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-red-50/40 transition">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white shrink-0">遅れ</span>
+                              <span className="text-xs text-gray-800 font-medium flex-1 truncate">{task.title}</span>
+                              <span className="text-[10px] text-gray-400 shrink-0">{task.category}</span>
+                              <span className="text-[10px] text-red-500 font-bold shrink-0 tabular-nums">{formatMMDD(task.due_date)}</span>
+                            </div>
+                          </Link>
+                        ))}
+                        {urgentTasks.map(task => (
+                          <Link key={task.id} href={`/tasks/${task.id}`}>
+                            <div className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-red-50/40 transition">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white shrink-0 ${task.due_date === today ? "bg-red-500" : "bg-amber-400"}`}>
+                                {task.due_date === today ? "今日" : "明日"}
+                              </span>
+                              <span className="text-xs text-gray-800 font-medium flex-1 truncate">{task.title}</span>
+                              <span className="text-[10px] text-gray-400 shrink-0">{task.category}</span>
+                              <span className="text-[10px] text-gray-500 shrink-0">{task.assignee_name?.split(" ")[0]}</span>
+                            </div>
+                          </Link>
+                        ))}
+                      </>
+                    )}
                   </div>
                 </div>
 
                 {/* 進行中タスク */}
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                  <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    <h2 className="font-bold text-gray-800 text-sm">進行中タスク</h2>
+                    <h2 className="font-bold text-gray-800 text-sm">進行中</h2>
                     <span className="ml-auto text-[10px] bg-blue-100 text-blue-600 font-bold px-2 py-0.5 rounded-full">
                       {activeTasks.filter(t => t.status === "進行中").length}件
                     </span>
                   </div>
-                  <div>
+                  <div className="divide-y divide-gray-50">
                     {activeTasks.filter(t => t.status === "進行中").length === 0 ? (
-                      <div className="py-8 text-center">
-                        <p className="text-2xl mb-1">🔵</p>
+                      <div className="py-6 text-center">
                         <p className="text-xs text-gray-400">進行中のタスクなし</p>
                       </div>
-                    ) : staffUsers.map((staff, staffIdx) => {
-                      const inProgress = activeTasks.filter(t => t.assignee_id === staff.id && t.status === "進行中");
-                      if (inProgress.length === 0) return null;
-                      return (
-                        <div key={staff.id} className={staffIdx > 0 ? "border-t-2 border-blue-100" : ""}>
-                          {inProgress.map((task, i) => (
-                            <Link key={task.id} href={`/tasks/${task.id}`}>
-                              <div className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-blue-50/30 transition border-b border-gray-50 last:border-b-0">
-                                {i === 0 ? (
-                                  <span className="text-[11px] font-bold text-gray-700 w-14 shrink-0 truncate">
-                                    {staff.name.split(" ")[0]}
-                                  </span>
-                                ) : (
-                                  <span className="w-14 shrink-0" />
-                                )}
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-                                <span className="text-sm text-gray-800 flex-1 truncate">{task.title}</span>
-                                <span className="text-[11px] text-gray-400 shrink-0 tabular-nums">{formatMMDD(task.due_date)}</span>
-                              </div>
-                            </Link>
-                          ))}
+                    ) : activeTasks.filter(t => t.status === "進行中").map(task => (
+                      <Link key={task.id} href={`/tasks/${task.id}`}>
+                        <div className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-blue-50/30 transition">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                          <span className="text-xs text-gray-800 font-medium flex-1 truncate">{task.title}</span>
+                          <span className="text-[10px] text-gray-400 shrink-0">{task.category}</span>
+                          <span className="text-[10px] text-gray-500 shrink-0">{task.assignee_name?.split(" ")[0]}</span>
+                          <span className="text-[10px] text-gray-400 shrink-0 tabular-nums">{formatMMDD(task.due_date)}</span>
                         </div>
-                      );
-                    })}
+                      </Link>
+                    ))}
                   </div>
                 </div>
+
+                {/* 直近の完了タスク */}
+                {(() => {
+                  const yesterday = new Date(today + "T00:00:00");
+                  yesterday.setDate(yesterday.getDate() - 1);
+                  const yesterdayStr = yesterday.toISOString().split("T")[0];
+                  const completedToday = tasks.filter(t => t.status === "完了" && t.completed_at && t.completed_at.startsWith(today));
+                  const completedYesterday = tasks.filter(t => t.status === "完了" && t.completed_at && t.completed_at.startsWith(yesterdayStr));
+                  return (
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <h2 className="font-bold text-gray-800 text-sm">完了</h2>
+                        <span className="ml-auto text-[10px] text-gray-400">{completedToday.length + completedYesterday.length}件</span>
+                      </div>
+                      <div className="divide-y divide-gray-50">
+                        {completedToday.length === 0 && completedYesterday.length === 0 ? (
+                          <div className="py-6 text-center">
+                            <p className="text-xs text-gray-400">直近の完了タスクなし</p>
+                          </div>
+                        ) : (
+                          <>
+                            {completedToday.length > 0 && (
+                              <div>
+                                <div className="px-3 py-1 bg-emerald-50/50">
+                                  <span className="text-[10px] font-bold text-emerald-600">今日 — {completedToday.length}件</span>
+                                </div>
+                                {completedToday.map(task => (
+                                  <Link key={task.id} href={`/tasks/${task.id}`}>
+                                    <div className="flex items-center gap-2 px-3 py-2.5 hover:bg-emerald-50/30 transition">
+                                      <span className="text-emerald-500 text-xs shrink-0">✓</span>
+                                      <span className="text-xs text-gray-800 font-medium flex-1 truncate">{task.title}</span>
+                                      <span className="text-[10px] text-gray-400 shrink-0">{task.category}</span>
+                                      <span className="text-[10px] text-gray-400 shrink-0">{task.assignee_name?.split(" ")[0]}</span>
+                                      {task.effort_label && (
+                                        <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-medium shrink-0">{task.effort_label}</span>
+                                      )}
+                                    </div>
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                            {completedYesterday.length > 0 && (
+                              <div>
+                                <div className="px-3 py-1 bg-slate-50/50">
+                                  <span className="text-[10px] font-bold text-slate-500">昨日 — {completedYesterday.length}件</span>
+                                </div>
+                                {completedYesterday.map(task => (
+                                  <Link key={task.id} href={`/tasks/${task.id}`}>
+                                    <div className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50/50 transition">
+                                      <span className="text-slate-400 text-xs shrink-0">✓</span>
+                                      <span className="text-xs text-gray-600 flex-1 truncate">{task.title}</span>
+                                      <span className="text-[10px] text-gray-400 shrink-0">{task.category}</span>
+                                      <span className="text-[10px] text-gray-400 shrink-0">{task.assignee_name?.split(" ")[0]}</span>
+                                      {task.effort_label && (
+                                        <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-medium shrink-0">{task.effort_label}</span>
+                                      )}
+                                    </div>
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
               </div>
 
@@ -639,7 +613,7 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
                     </div>
 
                     {/* ━ 日付ヘッダー ━ */}
-                    <div className="flex border-b-2 border-gray-200 bg-white sticky top-[24px] z-40">
+                    <div className="flex border-b-2 border-gray-200 bg-white sticky top-[27px] z-40">
                       <div className="shrink-0 border-r-2 border-gray-200 bg-white sticky left-0 z-50" style={{ width: GLEFT }} />
                       <div className="flex">
                         {ganttDays.map(day => {
@@ -722,32 +696,29 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
                             const isComplete = task.status === "完了";
 
                             // バー座標計算（範囲外はクランプ）
-                            const sIdx = s < GANTT_START ? 0 : ganttDays.indexOf(s);
-                            const eIdx = task.due_date > GANTT_END ? GDAYS - 1 : ganttDays.indexOf(task.due_date);
-                            const hasBar = sIdx >= 0 && eIdx >= 0;
+                            const realSIdx = ganttDays.indexOf(s);
+                            const clampedStart = s < GANTT_START;
+                            const sIdx = clampedStart ? 0 : Math.max(0, realSIdx);
+                            const clampedEnd = task.due_date > GANTT_END;
+                            const eIdx = clampedEnd ? GDAYS - 1 : ganttDays.indexOf(task.due_date);
+                            const hasBar = eIdx >= 0;
                             const barLeft = hasBar ? sIdx * GCELL + 2 : 0;
-                            const barW    = hasBar ? Math.max(GCELL * 2, (eIdx + 1) * GCELL - sIdx * GCELL - 4) : 0;
+                            const barW    = hasBar ? Math.max(GCELL * 3, (eIdx + 1) * GCELL - sIdx * GCELL - 4) : 0;
 
                             // バー内ラベル
                             const statusLabel = isOverdue && task.status !== "完了" ? "着手遅れ"
                               : task.status === "進行中"   ? "進行中"
-                              : task.status === "確認待ち" ? "確認待"
+                              : task.status === "確認待ち" ? "確認待ち"
                               : task.status === "完了"     ? "完了"
                               : "未着手";
-                            const labelTextClass = task.status === "進行中" || task.status === "確認待ち"
-                              ? "text-white"
-                              : task.status === "完了"
-                              ? "text-emerald-800"
-                              : isOverdue ? "text-red-700" : "text-gray-500";
-                            const LABEL_MIN_W = 68; // ラベルを内側に表示する最小バー幅(px)
 
                             return (
                               <Link key={task.id} href={`/tasks/${task.id}`}>
                                 <div className={`flex border-b border-gray-50 hover:bg-blue-50/25 transition group cursor-pointer ${isComplete ? "opacity-55" : ""}`}>
                                   {/* 左パネル */}
-                                  <div className="shrink-0 border-r-2 border-gray-200 px-3 py-1.5 flex items-center gap-2 sticky left-0 z-30 bg-white group-hover:bg-blue-50/25" style={{ width: GLEFT }}>
-                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ml-5 ${dotColor(task.status, isOverdue)} ${isOverdue ? "animate-pulse" : ""}`} />
-                                    <span className={`text-[11px] leading-tight truncate flex-1 ${isOverdue ? "text-red-600 font-semibold" : isComplete ? "text-gray-400 line-through" : "text-gray-800"}`}>
+                                  <div className="shrink-0 border-r-2 border-gray-200 px-3 py-1.5 flex items-center gap-2 sticky left-0 z-30 bg-white group-hover:bg-blue-50" style={{ width: GLEFT }}>
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ml-5 ${dotColor(task.status, isOverdue)}`} />
+                                    <span className={`text-[11px] leading-tight flex-1 truncate ${isOverdue ? "text-red-600 font-semibold" : isComplete ? "text-gray-400 line-through" : "text-gray-800"}`}>
                                       {task.title}
                                     </span>
                                   </div>
@@ -755,30 +726,24 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
                                   {/* バーエリア */}
                                   <div className="flex-1 relative" style={{ minHeight: 32 }}>
                                     {milestones}
-                                    {hasBar && (
-                                      <div
-                                        className={`absolute top-1/2 -translate-y-1/2 h-[22px] rounded-full z-10 flex items-center overflow-hidden ${barCls(task.status, isOverdue)}`}
-                                        style={{ left: barLeft, width: barW, ...barInlineStyle(task.status, isOverdue) }}
-                                      >
-                                        {barW >= LABEL_MIN_W && (
-                                          <div className={`px-3 flex items-center gap-1.5 w-full ${barLabelCls(task.status, isOverdue)}`}>
+                                    {hasBar && (() => {
+                                      const labelOffset = Math.max(0, ganttScrollLeft - barLeft);
+                                      return (
+                                        <div
+                                          className={`absolute top-1/2 -translate-y-1/2 h-[22px] z-[5] overflow-hidden ${barCls(task.status, isOverdue)} ${clampedStart ? "rounded-r-full" : "rounded-full"}`}
+                                          style={{ left: barLeft, width: barW, ...barInlineStyle(task.status, isOverdue) }}
+                                        >
+                                          <div
+                                            className={`px-2 h-full flex items-center gap-1.5 whitespace-nowrap ${barLabelCls(task.status, isOverdue)}`}
+                                            style={{ marginLeft: labelOffset }}
+                                          >
+                                            {labelOffset > 0 && <span className="text-[10px] shrink-0">←</span>}
                                             <span className="text-[10px] font-bold shrink-0">{statusLabel}</span>
-                                            <span className="text-[9px] opacity-60 shrink-0">·</span>
-                                            <span className="text-[10px] tabular-nums shrink-0">{formatMMDD(task.due_date)}</span>
+                                            <span className="text-[10px] tabular-nums shrink-0">{formatMMDD(s)} → {formatMMDD(task.due_date)}</span>
                                           </div>
-                                        )}
-                                      </div>
-                                    )}
-                                    {/* バーが狭い場合は右側にラベル */}
-                                    {hasBar && barW < LABEL_MIN_W && (
-                                      <div
-                                        className={`absolute top-1/2 -translate-y-1/2 z-10 flex items-center gap-1 ${barLabelCls(task.status, isOverdue)}`}
-                                        style={{ left: barLeft + barW + 4 }}
-                                      >
-                                        <span className="text-[10px] font-bold">{statusLabel}</span>
-                                        <span className="text-[10px] tabular-nums">{formatMMDD(task.due_date)}</span>
-                                      </div>
-                                    )}
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
                               </Link>

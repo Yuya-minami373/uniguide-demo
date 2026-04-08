@@ -86,6 +86,8 @@ export function initDb() {
 
   // Migration: add start_date column if not exists (for existing DBs)
   try { db.exec("ALTER TABLE tasks ADD COLUMN start_date TEXT"); } catch { /* already exists */ }
+  // Migration: add sub_assignee_id column (メイン/サブ担当者)
+  try { db.exec("ALTER TABLE tasks ADD COLUMN sub_assignee_id INTEGER REFERENCES users(id)"); } catch { /* already exists */ }
 
   // Seed data
   const userCount = (db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number }).count;
@@ -534,6 +536,16 @@ export function initDb() {
       UPDATE tasks SET effort_label = '半日（3〜4時間）' WHERE title = '開票従事者の確保・役割分担';
       UPDATE tasks SET effort_label = '1〜2時間' WHERE title = '掲示場設置箇所確認・更新';
       UPDATE tasks SET effort_label = '30分以内' WHERE title = '設置業者の選定・発注';
+    `);
+
+    // sub_assignee_id — デモ用のサブ担当者を設定（一部タスクで複数人担当を再現）
+    db.exec(`
+      UPDATE tasks SET sub_assignee_id = 5 WHERE title = '校正（局内回覧）' AND category = '入場整理券';
+      UPDATE tasks SET sub_assignee_id = 6 WHERE title = 'デザイン作成・業者打ち合わせ' AND category = '入場整理券';
+      UPDATE tasks SET sub_assignee_id = 1 WHERE title = '投票所 看板・案内表示 仕様確認' AND category = '投票所管理';
+      UPDATE tasks SET sub_assignee_id = 7 WHERE title = '投票管理者・立会人の選任依頼' AND category = '投票所管理';
+      UPDATE tasks SET sub_assignee_id = 2 WHERE title = '本番データ確認・入稿' AND category = '入場整理券';
+      UPDATE tasks SET sub_assignee_id = 1 WHERE title = '開票従事者の確保・役割分担' AND category = '開票';
     `);
   }
 

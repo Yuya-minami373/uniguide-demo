@@ -10,6 +10,7 @@ interface TaskRow {
   title: string;
   category: string;
   status: string;
+  start_date: string | null;
   due_date: string;
   assignee_id: number;
   assignee_name: string;

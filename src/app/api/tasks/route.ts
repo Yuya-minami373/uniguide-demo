@@ -28,19 +28,21 @@ export async function GET() {
   let tasks;
   if (session.role === "manager") {
     tasks = query<TaskRow>(`
-      SELECT t.*, u.name as assignee_name
+      SELECT t.*, u.name as assignee_name, u2.name as sub_assignee_name
       FROM tasks t
       LEFT JOIN users u ON t.assignee_id = u.id
+      LEFT JOIN users u2 ON t.sub_assignee_id = u2.id
       ORDER BY t.due_date ASC
     `);
   } else {
     tasks = query<TaskRow>(`
-      SELECT t.*, u.name as assignee_name
+      SELECT t.*, u.name as assignee_name, u2.name as sub_assignee_name
       FROM tasks t
       LEFT JOIN users u ON t.assignee_id = u.id
-      WHERE t.assignee_id = ?
+      LEFT JOIN users u2 ON t.sub_assignee_id = u2.id
+      WHERE t.assignee_id = ? OR t.sub_assignee_id = ?
       ORDER BY t.due_date ASC
-    `, [session.id]);
+    `, [session.id, session.id]);
   }
 
   return NextResponse.json(tasks);

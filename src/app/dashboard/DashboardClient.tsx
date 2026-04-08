@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import type { User } from "@/lib/auth";
@@ -13,6 +13,7 @@ interface Task {
   title: string;
   category: string;
   status: string;
+  start_date: string | null;
   due_date: string;
   assignee_name: string;
   playbook_conditions: string;
@@ -83,6 +84,33 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<"morning" | "list" | "gantt" | "roadmap">("morning");
   const [showCompleted, setShowCompleted] = useState(false);
+  const ganttScrollRef = useRef<HTMLDivElement>(null);
+
+  const [ganttScrollLeft, setGanttScrollLeft] = useState(0);
+
+  // ガントチャート: 今日の4日前が左端に来るよう自動スクロール
+  useEffect(() => {
+    if (activeTab === "gantt" && ganttScrollRef.current) {
+      const GCELL = 26;
+      const GANTT_START_D2 = new Date(today + "T00:00:00");
+      GANTT_START_D2.setDate(GANTT_START_D2.getDate() - 21);
+      const GANTT_START2 = GANTT_START_D2.toISOString().split("T")[0];
+      const daysSinceStart = Math.round(
+        (new Date(today + "T00:00:00").getTime() - new Date(GANTT_START2 + "T00:00:00").getTime()) / 86400000
+      );
+      const todayX = daysSinceStart * GCELL;
+      ganttScrollRef.current.scrollLeft = Math.max(0, todayX - 4 * GCELL);
+    }
+  }, [activeTab, today]);
+
+  // スクロール量を追跡
+  useEffect(() => {
+    const el = ganttScrollRef.current;
+    if (!el) return;
+    const handler = () => setGanttScrollLeft(el.scrollLeft);
+    el.addEventListener("scroll", handler, { passive: true });
+    return () => el.removeEventListener("scroll", handler);
+  }, [activeTab]);
 
   const categories = getCategoryStats(tasks);
   const categoryNames = Object.keys(categories);
@@ -105,7 +133,7 @@ export default function DashboardClient({
   const DAYS = 21;
   const dayOffset = -2;
   const CELL = 52;
-  const LEFT_W = 240;
+  const LEFT_W = 320;
 
   const days: string[] = [];
   for (let i = dayOffset; i < dayOffset + DAYS; i++) {
@@ -132,27 +160,46 @@ export default function DashboardClient({
     <AppShell user={user} progressCompleted={progressCompleted} progressInProgress={progressInProgress} demoMode={demoMode}>
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-        {/* ━━━ Tab header ━━━ */}
-        <div className="bg-white border-b border-gray-200 px-6 py-3 shrink-0 flex items-center gap-1">
-          {[
-            { key: "morning",  label: "Today's UniGuide", icon: "☀️" },
-            { key: "list",     label: "タスク一覧",    icon: "☑️" },
-            { key: "gantt",    label: "スケジュール",  icon: "📅" },
-            { key: "roadmap",  label: "ロードマップ",  icon: "🗺️" },
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as "morning" | "list" | "gantt" | "roadmap")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                activeTab === tab.key
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-              }`}
-            >
-              <span>{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
+        {/* ━━━ Page Header ━━━ */}
+        <div className="bg-white border-b border-gray-200 px-6 py-2 shrink-0">
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <p className="text-[10px] text-gray-400 font-medium tracking-wide">Myプロジェクト</p>
+              <h1 className="text-base font-bold text-gray-900 leading-tight">{user.name} — {user.category || "担当業務"}</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 rounded-lg px-3 py-1">
+                <p className="text-[10px] text-orange-500 font-bold">告示日まで</p>
+                <p className="text-xl font-bold text-orange-500 tabular-nums leading-none">{Math.round((new Date(ANNOUNCEMENT_DATE + "T00:00:00").getTime() - new Date(today + "T00:00:00").getTime()) / 86400000)}</p>
+                <p className="text-[10px] text-orange-400">日</p>
+              </div>
+              <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1">
+                <p className="text-[10px] text-gray-500 font-bold">投票日まで</p>
+                <p className="text-xl font-bold text-gray-700 tabular-nums leading-none">{Math.round((new Date(VOTE_DATE + "T00:00:00").getTime() - new Date(today + "T00:00:00").getTime()) / 86400000)}</p>
+                <p className="text-[10px] text-gray-400">日</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-1">
+            {[
+              { key: "morning",  label: "Today's UniGuide" },
+              { key: "list",     label: "タスク一覧" },
+              { key: "gantt",    label: "ガントチャート" },
+              { key: "roadmap",  label: "ロードマップ" },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as "morning" | "list" | "gantt" | "roadmap")}
+                className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${
+                  activeTab === tab.key
+                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                    : "bg-white text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-600"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ━━━ 朝の確認タブ ━━━ */}
@@ -183,48 +230,32 @@ export default function DashboardClient({
           const announceDiff = Math.round((new Date(ANNOUNCEMENT_DATE + "T00:00:00").getTime() - new Date(today + "T00:00:00").getTime()) / 86400000);
 
           return (
-          <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#f0f5ff" }}>
+          <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#f8fafc" }}>
 
-            {/* ── ヒーローKPIバー ── */}
-            <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-4">
-              <p className="text-slate-400 text-[11px] font-semibold mb-3 tracking-wide uppercase">Today's Overview</p>
+            {/* ── KPIバー ── */}
+            <div className="px-5 pt-4">
               <div className="grid grid-cols-5 gap-3">
-                {/* 今日期限 */}
-                <div className={`rounded-xl px-4 py-3 ${todayTasks.length > 0 ? "bg-red-500/20 border border-red-400/30" : "bg-white/5 border border-white/10"}`}>
-                  <p className="text-[10px] font-semibold text-slate-400 mb-1">今日期限</p>
-                  <p className={`text-2xl font-extrabold tabular-nums ${todayTasks.length > 0 ? "text-red-300" : "text-slate-400"}`}>{todayTasks.length}<span className="text-xs font-normal ml-0.5">件</span></p>
+                <div className={`bg-white rounded-xl border px-4 py-3 ${todayTasks.length > 0 ? "border-red-200" : "border-gray-200"}`}>
+                  <p className="text-[10px] font-semibold text-gray-400 mb-1">今日期限</p>
+                  <p className={`text-2xl font-bold tabular-nums ${todayTasks.length > 0 ? "text-red-600" : "text-gray-300"}`}>{todayTasks.length}<span className="text-xs font-normal text-gray-400 ml-0.5">件</span></p>
                 </div>
-                {/* 明日期限 */}
-                <div className={`rounded-xl px-4 py-3 ${tomorrowTasks.length > 0 ? "bg-amber-500/20 border border-amber-400/30" : "bg-white/5 border border-white/10"}`}>
-                  <p className="text-[10px] font-semibold text-slate-400 mb-1">明日期限</p>
-                  <p className={`text-2xl font-extrabold tabular-nums ${tomorrowTasks.length > 0 ? "text-amber-300" : "text-slate-400"}`}>{tomorrowTasks.length}<span className="text-xs font-normal ml-0.5">件</span></p>
+                <div className={`bg-white rounded-xl border px-4 py-3 ${tomorrowTasks.length > 0 ? "border-amber-200" : "border-gray-200"}`}>
+                  <p className="text-[10px] font-semibold text-gray-400 mb-1">明日期限</p>
+                  <p className={`text-2xl font-bold tabular-nums ${tomorrowTasks.length > 0 ? "text-amber-600" : "text-gray-300"}`}>{tomorrowTasks.length}<span className="text-xs font-normal text-gray-400 ml-0.5">件</span></p>
                 </div>
-                {/* 進行中 */}
-                <div className="rounded-xl px-4 py-3 bg-blue-500/20 border border-blue-400/30">
-                  <p className="text-[10px] font-semibold text-slate-400 mb-1">進行中</p>
-                  <p className="text-2xl font-extrabold tabular-nums text-blue-300">{inProgressCount}<span className="text-xs font-normal ml-0.5">件</span></p>
+                <div className="bg-white rounded-xl border border-gray-200 px-4 py-3">
+                  <p className="text-[10px] font-semibold text-gray-400 mb-1">進行中</p>
+                  <p className="text-2xl font-bold tabular-nums text-blue-600">{inProgressCount}<span className="text-xs font-normal text-gray-400 ml-0.5">件</span></p>
                 </div>
-                {/* 確認待ち */}
-                <div className={`rounded-xl px-4 py-3 ${pendingCount > 0 ? "bg-yellow-500/20 border border-yellow-400/30" : "bg-white/5 border border-white/10"}`}>
-                  <p className="text-[10px] font-semibold text-slate-400 mb-1">確認待ち</p>
-                  <p className={`text-2xl font-extrabold tabular-nums ${pendingCount > 0 ? "text-yellow-300" : "text-slate-400"}`}>{pendingCount}<span className="text-xs font-normal ml-0.5">件</span></p>
+                <div className={`bg-white rounded-xl border px-4 py-3 ${pendingCount > 0 ? "border-yellow-200" : "border-gray-200"}`}>
+                  <p className="text-[10px] font-semibold text-gray-400 mb-1">確認待ち</p>
+                  <p className={`text-2xl font-bold tabular-nums ${pendingCount > 0 ? "text-yellow-600" : "text-gray-300"}`}>{pendingCount}<span className="text-xs font-normal text-gray-400 ml-0.5">件</span></p>
                 </div>
-                {/* 告示まで */}
-                <div className="rounded-xl px-4 py-3 bg-orange-500/20 border border-orange-400/30">
-                  <p className="text-[10px] font-semibold text-slate-400 mb-1">告示まで</p>
-                  <p className="text-2xl font-extrabold tabular-nums text-orange-300">{announceDiff}<span className="text-xs font-normal ml-0.5">日</span></p>
+                <div className="bg-white rounded-xl border border-orange-200 px-4 py-3">
+                  <p className="text-[10px] font-semibold text-gray-400 mb-1">告示まで</p>
+                  <p className="text-2xl font-bold tabular-nums text-orange-500">{announceDiff}<span className="text-xs font-normal text-gray-400 ml-0.5">日</span></p>
                 </div>
               </div>
-            </div>
-
-            {/* ── 受電記録ボタン ── */}
-            <div className="px-5 pt-3">
-              <a
-                href="/calls"
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-3 rounded-xl text-sm transition w-fit"
-              >
-                📞 受電記録
-              </a>
             </div>
 
             {/* ── アクションリスト + スケジュール ── */}
@@ -500,7 +531,7 @@ export default function DashboardClient({
             </div>
 
             {/* Right: Task list */}
-            <div className="flex-1 min-w-0 flex flex-col overflow-hidden" style={{ backgroundColor: "#f0f5ff" }}>
+            <div className="flex-1 min-w-0 flex flex-col overflow-hidden" style={{ backgroundColor: "#f8fafc" }}>
               <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between shrink-0">
                 <div>
                   <h2 className="text-sm font-bold text-gray-800">{selectedCategory ?? "すべてのタスク"}</h2>
@@ -530,7 +561,7 @@ export default function DashboardClient({
                 {todayTasks.length > 0 && (
                   <div className="max-w-[680px] mb-7">
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      <span className="w-2 h-2 rounded-full bg-red-500 " />
                       <h3 className="text-xs font-bold text-gray-700 tracking-wide">今日やること</h3>
                       <span className="text-[10px] text-red-600 font-bold bg-red-50 border border-red-100 px-2 py-0.5 rounded-full">{todayTasks.length}件</span>
                     </div>
@@ -667,165 +698,255 @@ export default function DashboardClient({
           </div>
         )}
 
-        {/* ━━━ スケジュールタブ（個人ガント） ━━━ */}
-        {activeTab === "gantt" && (
-          <div className="flex-1 overflow-hidden p-6" style={{ backgroundColor: "#f0f5ff" }}>
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm h-full flex flex-col overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2 shrink-0">
-                <span className="w-2 h-2 rounded-full bg-blue-500" />
-                <h2 className="text-sm font-bold text-gray-800">担当タスク スケジュール</h2>
-                <span className="ml-auto text-[10px] text-gray-400">{activeTasks.length}件のアクティブタスク</span>
+        {/* ━━━ ガントチャートタブ ━━━ */}
+        {activeTab === "gantt" && (() => {
+          const GCELL = 26;
+          const GLEFT = 280;
+          const GANTT_START_D = new Date(today + "T00:00:00");
+          GANTT_START_D.setDate(GANTT_START_D.getDate() - 21);
+          const GANTT_START = GANTT_START_D.toISOString().split("T")[0];
+          const GANTT_END_D = new Date(VOTE_DATE + "T00:00:00");
+          GANTT_END_D.setDate(GANTT_END_D.getDate() + 7);
+          const GANTT_END = GANTT_END_D.toISOString().split("T")[0];
+
+          const ganttDays: string[] = [];
+          for (
+            const d = new Date(GANTT_START + "T00:00:00");
+            d.toISOString().split("T")[0] <= GANTT_END;
+            d.setDate(d.getDate() + 1)
+          ) {
+            ganttDays.push(d.toISOString().split("T")[0]);
+          }
+          const GDAYS = ganttDays.length;
+
+          const gMonthGroups: { label: string; count: number }[] = [];
+          ganttDays.forEach(day => {
+            const d = new Date(day + "T00:00:00");
+            const label = `${d.getFullYear()}年${d.getMonth() + 1}月`;
+            const last = gMonthGroups[gMonthGroups.length - 1];
+            if (last && last.label === label) last.count++;
+            else gMonthGroups.push({ label, count: 1 });
+          });
+
+          const gTodayIdx = ganttDays.indexOf(today);
+          const gAnnIdx   = ganttDays.indexOf(ANNOUNCEMENT_DATE);
+          const gVoteIdx  = ganttDays.indexOf(VOTE_DATE);
+
+          const barCls = (status: string, isOverdue: boolean) => {
+            if (isOverdue)             return "bg-red-50 border-2 border-red-400";
+            if (status === "完了")     return "border border-emerald-400";
+            if (status === "進行中")   return "bg-blue-50 border border-blue-400";
+            if (status === "確認待ち") return "bg-amber-50 border border-amber-400";
+            return "bg-slate-100 border border-slate-300";
+          };
+
+          const barInlineStyle = (status: string): React.CSSProperties => {
+            if (status === "完了") return { background: "repeating-linear-gradient(45deg,rgba(16,185,129,.18),rgba(16,185,129,.18) 3px,rgba(209,250,229,.6) 3px,rgba(209,250,229,.6) 9px)" };
+            return {};
+          };
+
+          const barLabelCls = (status: string, isOverdue: boolean) =>
+            isOverdue             ? "text-red-700 font-bold"
+            : status === "完了"   ? "text-emerald-700"
+            : status === "進行中" ? "text-blue-700 font-semibold"
+            : status === "確認待ち" ? "text-amber-700 font-semibold"
+            : "text-slate-500";
+
+          const dotColor = (status: string, isOverdue: boolean) =>
+            status === "完了"       ? "bg-emerald-500"
+            : status === "進行中"   ? "bg-blue-500"
+            : status === "確認待ち" ? "bg-amber-500"
+            : isOverdue             ? "bg-red-400"
+            : "bg-gray-300";
+
+          const milestones = (
+            <>
+              {gTodayIdx >= 0 && <div className="absolute top-0 bottom-0 w-px bg-red-500 z-10 opacity-70" style={{ left: gTodayIdx * GCELL + GCELL / 2 }} />}
+              {gAnnIdx   >= 0 && <div className="absolute top-0 bottom-0 z-10 opacity-50" style={{ left: gAnnIdx * GCELL + GCELL / 2, borderLeft: "1px dashed #f97316" }} />}
+              {gVoteIdx  >= 0 && <div className="absolute top-0 bottom-0 z-10 opacity-50" style={{ left: gVoteIdx * GCELL + GCELL / 2, borderLeft: "1px dashed #ef4444" }} />}
+            </>
+          );
+
+          const visibleTasks = showCompleted ? tasks : activeTasks;
+
+          return (
+          <div className="flex-1 overflow-hidden flex flex-col bg-white border-t border-gray-200">
+            {/* 凡例 + 完了トグル */}
+            <div className="flex items-center gap-4 px-4 py-2 border-b border-gray-100 bg-slate-50/60 flex-wrap shrink-0">
+              <span className="text-[10px] font-semibold text-gray-400 tracking-wide shrink-0">凡例</span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-8 h-3.5 rounded-full shrink-0 bg-blue-50 border border-blue-400" />
+                <span className="text-[11px] text-blue-700 font-semibold">進行中</span>
               </div>
-              <div className="flex-1 overflow-auto">
-                <div style={{ minWidth: `${LEFT_W + DAYS * CELL}px` }}>
+              <div className="flex items-center gap-1.5">
+                <span className="w-8 h-3.5 rounded-full shrink-0 bg-amber-50 border border-amber-400" />
+                <span className="text-[11px] text-amber-700 font-semibold">確認待ち</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-8 h-3.5 rounded-full shrink-0 bg-slate-100 border border-slate-300" />
+                <span className="text-[11px] text-slate-500 font-semibold">未着手</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-8 h-3.5 rounded-full shrink-0 bg-red-50 border-2 border-red-400" />
+                <span className="text-[11px] text-red-700 font-semibold">着手遅れ</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-8 h-3.5 rounded-full shrink-0 border border-emerald-400" style={{ background: "repeating-linear-gradient(45deg,rgba(16,185,129,.18),rgba(16,185,129,.18) 3px,rgba(209,250,229,.6) 3px,rgba(209,250,229,.6) 9px)" }} />
+                <span className="text-[11px] text-emerald-700 font-semibold">完了</span>
+              </div>
+              <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                <span className="text-[11px] text-gray-500">完了タスクを表示</span>
+                <button
+                  onClick={() => setShowCompleted(v => !v)}
+                  className={`relative w-8 h-4 rounded-full transition-colors ${showCompleted ? "bg-blue-500" : "bg-gray-200"}`}
+                >
+                  <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${showCompleted ? "translate-x-4" : "translate-x-0.5"}`} />
+                </button>
+              </div>
+            </div>
 
-                  {/* Month header */}
-                  <div className="flex border-b border-gray-100 bg-white sticky top-0 z-20">
-                    <div className="shrink-0 border-r-2 border-gray-200 px-4 flex items-end pb-1.5 bg-white sticky left-0 z-30" style={{ width: LEFT_W }}>
-                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">タスク</span>
-                    </div>
-                    <div className="flex">
-                      {monthGroups.map(mg => (
-                        <div key={mg.label} style={{ width: mg.count * CELL }} className="shrink-0 border-r border-gray-100 px-2 pt-1.5 pb-0.5">
-                          <span className="text-[11px] font-bold text-gray-500">{mg.label}</span>
-                        </div>
-                      ))}
-                    </div>
+            <div ref={ganttScrollRef} className="flex-1 overflow-x-auto overflow-y-auto">
+              <div style={{ minWidth: `${GLEFT + GDAYS * GCELL}px` }}>
+
+                {/* 月ヘッダー */}
+                <div className="flex border-b border-gray-100 bg-white sticky top-0 z-40">
+                  <div className="shrink-0 border-r-2 border-gray-200 px-3 flex items-end pb-1 bg-white sticky left-0 z-50" style={{ width: GLEFT }}>
+                    <span className="text-[10px] font-semibold text-gray-400 tracking-wide">タスク</span>
                   </div>
+                  <div className="flex">
+                    {gMonthGroups.map(mg => (
+                      <div key={mg.label} style={{ width: mg.count * GCELL }} className="shrink-0 border-r border-gray-100 px-2 pt-1.5 pb-0.5">
+                        <span className="text-[11px] font-bold text-gray-500">{mg.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-                  {/* Day numbers */}
-                  <div className="flex border-b-2 border-gray-200 bg-white sticky top-[28px] z-20">
-                    <div className="shrink-0 border-r-2 border-gray-200 bg-white sticky left-0 z-30" style={{ width: LEFT_W }} />
-                    <div className="flex">
-                      {days.map(day => {
-                        const isToday = day === today;
-                        const isAnn = day === ANNOUNCEMENT_DATE;
-                        const isVote = day === VOTE_DATE;
-                        const d = new Date(day + "T00:00:00");
-                        const isSun = d.getDay() === 0;
-                        const isSat = d.getDay() === 6;
+                {/* 日付ヘッダー */}
+                <div className="flex border-b-2 border-gray-200 bg-white sticky top-[24px] z-40">
+                  <div className="shrink-0 border-r-2 border-gray-200 bg-white sticky left-0 z-50" style={{ width: GLEFT }} />
+                  <div className="flex">
+                    {ganttDays.map(day => {
+                      const isToday = day === today;
+                      const isAnn   = day === ANNOUNCEMENT_DATE;
+                      const isVote  = day === VOTE_DATE;
+                      const d = new Date(day + "T00:00:00");
+                      const isSun = d.getDay() === 0;
+                      const isSat = d.getDay() === 6;
+                      return (
+                        <div key={day} style={{ width: GCELL }}
+                          className={`shrink-0 flex items-center justify-center py-0.5 border-r border-gray-100 ${isAnn ? "bg-orange-50" : isVote ? "bg-red-50" : isSun || isSat ? "bg-gray-50" : ""}`}>
+                          {isToday ? (
+                            <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{d.getDate()}</span>
+                          ) : isAnn ? (
+                            <div className="flex flex-col items-center leading-none">
+                              <span className="text-[6px] font-bold text-orange-600">告</span>
+                              <span className="text-[10px] font-bold text-orange-500">{d.getDate()}</span>
+                            </div>
+                          ) : isVote ? (
+                            <div className="flex flex-col items-center leading-none">
+                              <span className="text-[6px] font-bold text-red-600">投</span>
+                              <span className="text-[10px] font-bold text-red-500">{d.getDate()}</span>
+                            </div>
+                          ) : (
+                            <span className={`text-[10px] ${isSun ? "text-red-400" : isSat ? "text-blue-400" : "text-gray-400"}`}>{d.getDate()}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* カテゴリ別タスク行 */}
+                {categoryNames.map(cat => {
+                  const catTasks = visibleTasks.filter(t => t.category === cat);
+                  if (catTasks.length === 0) return null;
+                  const catAll = categories[cat].tasks;
+                  const done = catAll.filter(t => t.status === "完了").length;
+                  const pct = catAll.length > 0 ? Math.round((done / catAll.length) * 100) : 0;
+
+                  const sorted = [...catTasks].sort((a, b) => {
+                    const ord: Record<string, number> = { "進行中": 0, "確認待ち": 1, "未着手": 2, "完了": 3 };
+                    const d2 = (ord[a.status] ?? 9) - (ord[b.status] ?? 9);
+                    return d2 !== 0 ? d2 : a.due_date < b.due_date ? -1 : 1;
+                  });
+
+                  return (
+                    <div key={cat}>
+                      {/* カテゴリヘッダー */}
+                      <div className="flex border-b border-blue-100 bg-gradient-to-r from-slate-50 to-blue-50/30">
+                        <div className="shrink-0 border-r-2 border-gray-200 px-3 py-1.5 flex items-center gap-2 sticky left-0 z-30 bg-slate-50" style={{ width: GLEFT }}>
+                          <span className="text-xs font-bold text-indigo-700 flex-1">{cat}</span>
+                          <span className="text-[10px] text-indigo-500 font-semibold tabular-nums shrink-0">{pct}%</span>
+                        </div>
+                        <div className="flex-1 relative" style={{ minHeight: 28 }}>
+                          {milestones}
+                        </div>
+                      </div>
+
+                      {/* タスク行 */}
+                      {sorted.map(task => {
+                        const s = task.start_date || task.due_date;
+                        const isOverdue = task.status !== "完了" && task.due_date < today;
+                        const isComplete = task.status === "完了";
+
+                        const realSIdx = ganttDays.indexOf(s);
+                        const clampedStart = s < GANTT_START;
+                        const startDay = clampedStart ? 0 : Math.max(0, realSIdx);
+                        const clampedEnd = task.due_date > GANTT_END;
+                        const eIdx = clampedEnd ? GDAYS - 1 : ganttDays.indexOf(task.due_date);
+                        const hasBar = eIdx >= 0;
+                        const barLeft = hasBar ? startDay * GCELL + 2 : 0;
+                        const barW    = hasBar ? Math.max(GCELL * 3, (eIdx + 1) * GCELL - startDay * GCELL - 4) : 0;
+
+                        const statusLabel = isOverdue && !isComplete ? "着手遅れ"
+                          : task.status === "進行中"   ? "進行中"
+                          : task.status === "確認待ち" ? "確認待ち"
+                          : task.status === "完了"     ? "完了"
+                          : "未着手";
+
                         return (
-                          <div key={day} style={{ width: CELL }}
-                            className={`shrink-0 flex items-center justify-center py-1.5 border-r border-gray-100 ${
-                              isAnn ? "bg-orange-50" : isVote ? "bg-red-50" : isSun || isSat ? "bg-gray-50" : ""
-                            }`}>
-                            {isToday ? (
-                              <span className="w-7 h-7 rounded-full bg-red-500 text-white text-sm font-bold flex items-center justify-center">{d.getDate()}</span>
-                            ) : isAnn ? (
-                              <div className="flex flex-col items-center">
-                                <span className="text-[8px] font-bold text-orange-600 leading-none">告示</span>
-                                <span className="text-sm font-bold text-orange-500">{d.getDate()}</span>
+                          <Link key={task.id} href={`/tasks/${task.id}`}>
+                            <div className={`flex border-b border-gray-50 hover:bg-blue-50/25 transition group cursor-pointer ${isComplete ? "opacity-55" : ""}`}>
+                              <div className="shrink-0 border-r-2 border-gray-200 px-3 py-1.5 flex items-center gap-2 sticky left-0 z-30 bg-white group-hover:bg-blue-50 pl-5" style={{ width: GLEFT }}>
+                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor(task.status, isOverdue)}`} />
+                                <span className={`text-[11px] leading-tight flex-1 truncate ${isOverdue ? "text-red-600 font-semibold" : isComplete ? "text-gray-400 line-through" : "text-gray-800"}`}>
+                                  {task.title}
+                                </span>
                               </div>
-                            ) : isVote ? (
-                              <div className="flex flex-col items-center">
-                                <span className="text-[8px] font-bold text-red-600 leading-none">投票</span>
-                                <span className="text-sm font-bold text-red-500">{d.getDate()}</span>
+                              <div className="flex-1 relative" style={{ minHeight: 32 }}>
+                                {milestones}
+                                {hasBar && (() => {
+                                  const labelOffset = Math.max(0, ganttScrollLeft - barLeft);
+                                  return (
+                                    <div
+                                      className={`absolute top-1/2 -translate-y-1/2 h-[22px] z-[5] overflow-hidden ${barCls(task.status, isOverdue)} ${clampedStart ? "rounded-r-full" : "rounded-full"}`}
+                                      style={{ left: barLeft, width: barW, ...barInlineStyle(task.status) }}
+                                    >
+                                      <div
+                                        className={`px-2 h-full flex items-center gap-1.5 whitespace-nowrap ${barLabelCls(task.status, isOverdue)}`}
+                                        style={{ marginLeft: labelOffset }}
+                                      >
+                                        {labelOffset > 0 && <span className="text-[10px] shrink-0">←</span>}
+                                        <span className="text-[10px] font-bold shrink-0">{statusLabel}</span>
+                                        <span className="text-[10px] tabular-nums shrink-0">{formatMMDD(s)} → {formatMMDD(task.due_date)}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                               </div>
-                            ) : (
-                              <span className={`text-sm font-medium ${isSun ? "text-red-400" : isSat ? "text-blue-400" : "text-gray-500"}`}>
-                                {d.getDate()}
-                              </span>
-                            )}
-                          </div>
+                            </div>
+                          </Link>
                         );
                       })}
                     </div>
-                  </div>
-
-                  {/* Task rows — grouped by category */}
-                  {activeTasks.length === 0 ? (
-                    <div className="py-16 text-center text-gray-400 text-sm">アクティブなタスクはありません</div>
-                  ) : categoryNames.map(cat => {
-                    const catActiveTasks = activeTasks.filter(t => t.category === cat);
-                    if (catActiveTasks.length === 0) return null;
-                    const catAll = categories[cat].tasks;
-                    const done = catAll.filter(t => t.status === "完了").length;
-                    const pct = catAll.length > 0 ? Math.round((done / catAll.length) * 100) : 0;
-                    return (
-                      <div key={cat}>
-                        {/* Category header row */}
-                        <div className="flex border-b-2 border-indigo-100 bg-indigo-50/60 sticky top-[56px] z-10">
-                          <div className="shrink-0 border-r-2 border-gray-200 px-3 py-2 flex items-center gap-2 bg-indigo-50 sticky left-0 z-20" style={{ width: LEFT_W }}>
-                            <span className="text-xs font-bold text-indigo-700 truncate flex-1">{cat}</span>
-                            <span className="text-[10px] text-indigo-500 font-semibold tabular-nums shrink-0">{pct}%</span>
-                          </div>
-                          <div className="flex-1 relative" style={{ minHeight: 32 }}>
-                            {days.map((day, i) => {
-                              const d = new Date(day + "T00:00:00");
-                              const isSun = d.getDay() === 0; const isSat = d.getDay() === 6;
-                              return (
-                                <div key={day} style={{ width: CELL, position: "absolute", top: 0, bottom: 0, left: i * CELL }}
-                                  className={`border-r border-indigo-100/60 ${day === today ? "bg-red-50/30" : isSun || isSat ? "bg-indigo-50/30" : ""}`} />
-                              );
-                            })}
-                            {todayIdx >= 0 && <div className="absolute top-0 bottom-0 w-0.5 bg-red-400 z-10 opacity-40" style={{ left: todayIdx * CELL + CELL / 2 }} />}
-                            {/* Progress bar overlay */}
-                            <div className="absolute bottom-0 left-0 right-0 h-1">
-                              <div className="h-full bg-indigo-300/60" style={{ width: `${pct}%` }} />
-                            </div>
-                          </div>
-                        </div>
-                        {/* Tasks in this category */}
-                        {catActiveTasks.map(task => {
-                          const dayDiff = getDayDiff(task.due_date, days[0]);
-                          const inRange = dayDiff >= 0 && dayDiff < DAYS;
-                          const badge = GANTT_BADGE[task.status] ?? GANTT_BADGE["未着手"];
-                          const isOverdue = getDayDiff(task.due_date, today) < 0;
-                          const BADGE_W = 120;
-                          const badgeLeft = inRange
-                            ? Math.max(0, Math.min(dayDiff * CELL + CELL / 2 - BADGE_W / 2, DAYS * CELL - BADGE_W))
-                            : null;
-                          return (
-                            <Link key={task.id} href={`/tasks/${task.id}`}>
-                              <div className="flex border-b border-gray-50 hover:bg-blue-50/20 transition group cursor-pointer">
-                                <div className="shrink-0 border-r-2 border-gray-200 px-3 py-2 flex items-center gap-2 bg-white sticky left-0 z-10 group-hover:bg-blue-50/20 pl-6" style={{ width: LEFT_W }}>
-                                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{
-                                    backgroundColor: task.status === "進行中" ? "#3b82f6" : task.status === "確認待ち" ? "#f59e0b" : "#9ca3af"
-                                  }} />
-                                  <p className={`text-sm truncate ${isOverdue ? "text-red-600 font-semibold" : "text-gray-800"}`}>{task.title}</p>
-                                </div>
-                                <div className="flex-1 relative" style={{ minHeight: 44 }}>
-                                  {days.map((day, i) => {
-                                    const isAnn = day === ANNOUNCEMENT_DATE;
-                                    const isVote = day === VOTE_DATE;
-                                    const d = new Date(day + "T00:00:00");
-                                    const isSun = d.getDay() === 0; const isSat = d.getDay() === 6;
-                                    return (
-                                      <div key={day} style={{ width: CELL, position: "absolute", top: 0, bottom: 0, left: i * CELL }}
-                                        className={`border-r border-gray-50 ${isAnn ? "bg-orange-50/40" : isVote ? "bg-red-50/40" : day === today ? "bg-red-50/20" : isSun || isSat ? "bg-gray-50/30" : ""}`} />
-                                    );
-                                  })}
-                                  {todayIdx >= 0 && <div className="absolute top-0 bottom-0 w-0.5 bg-red-400 z-10 opacity-50" style={{ left: todayIdx * CELL + CELL / 2 }} />}
-                                  {announcementIdx >= 0 && <div className="absolute top-0 bottom-0 w-0.5 bg-orange-400 z-10 opacity-60" style={{ left: announcementIdx * CELL + CELL / 2 }} />}
-                                  {voteIdx >= 0 && <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 opacity-70" style={{ left: voteIdx * CELL + CELL / 2 }} />}
-                                  {inRange && badgeLeft !== null && (
-                                    <div className={`absolute top-1/2 -translate-y-1/2 z-20 flex items-center gap-1.5 rounded-lg px-2 py-1 ${badge.bg} border ${badge.border} shadow-sm`}
-                                      style={{ left: badgeLeft, width: BADGE_W }}>
-                                      <span className={`w-2 h-2 rounded-full shrink-0 ${badge.dot}`} />
-                                      <span className={`text-[11px] font-bold truncate flex-1 ${badge.text}`}>{task.status}</span>
-                                      <span className="text-[11px] text-gray-500 shrink-0 tabular-nums font-medium">{formatMMDD(task.due_date)}</span>
-                                    </div>
-                                  )}
-                                  {!inRange && (
-                                    <div className="absolute top-1/2 -translate-y-1/2 text-[10px] text-gray-300 px-2"
-                                      style={{ left: dayDiff < 0 ? 4 : "auto", right: dayDiff >= DAYS ? 4 : "auto" }}>
-                                      {dayDiff < 0 ? `← ${formatMMDD(task.due_date)}` : `${formatMMDD(task.due_date)} →`}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-
-                </div>
+                  );
+                })}
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* ━━━ ロードマップタブ ━━━ */}
         {activeTab === "roadmap" && (() => {
@@ -904,7 +1025,7 @@ export default function DashboardClient({
           const overallPct = totalAll > 0 ? Math.round((doneAll / totalAll) * 100) : 0;
 
           return (
-            <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#f0f5ff" }}>
+            <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#f8fafc" }}>
               <div className="px-6 py-5 max-w-[1080px] mx-auto">
 
                 {/* ── タイムラインヘッダー ── */}

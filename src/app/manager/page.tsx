@@ -15,6 +15,8 @@ interface TaskRow {
   assignee_name: string;
   completed_at: string | null;
   effort_label: string | null;
+  sub_assignee_id: number | null;
+  sub_assignee_name: string | null;
 }
 
 interface UserRow {
@@ -37,9 +39,10 @@ export default async function ManagerPage({
   const { viewAs } = await searchParams;
 
   const tasks = query<TaskRow>(`
-    SELECT t.id, t.title, t.category, t.status, t.start_date, t.due_date, t.assignee_id, u.name as assignee_name, t.completed_at, t.effort_label
+    SELECT t.id, t.title, t.category, t.status, t.start_date, t.due_date, t.assignee_id, u.name as assignee_name, t.completed_at, t.effort_label, t.sub_assignee_id, u2.name as sub_assignee_name
     FROM tasks t
     LEFT JOIN users u ON t.assignee_id = u.id
+    LEFT JOIN users u2 ON t.sub_assignee_id = u2.id
     ORDER BY t.due_date ASC
   `);
 

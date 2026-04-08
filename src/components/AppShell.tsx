@@ -25,10 +25,10 @@ function NavIcon({ name, className }: { name: IconName; className?: string }) {
 }
 
 const DEMO_VIEWS = [
-  { key: "staff-1", icon: "👤", label: "職員A", sub: "入場整理券", href: "/dashboard?viewAs=1" },
-  { key: "staff-2", icon: "👤", label: "職員B", sub: "投票所管理", href: "/dashboard?viewAs=2" },
-  { key: "manager", icon: "👔", label: "係長",  sub: "管理者",    href: "/manager?viewAs=manager" },
-  { key: "unipoll", icon: "🏢", label: "UniPoll",   sub: "全機能",    href: "/manager" },
+  { key: "staff-1", label: "職員A", sub: "入場整理券", href: "/dashboard?viewAs=1" },
+  { key: "staff-2", label: "職員B", sub: "投票所管理", href: "/dashboard?viewAs=2" },
+  { key: "manager", label: "係長",  sub: "管理者",    href: "/manager?viewAs=manager" },
+  { key: "unipoll", label: "UniPoll",   sub: "全機能",    href: "/manager" },
 ];
 
 function DemoNavBar() {
@@ -49,39 +49,38 @@ function DemoNavBar() {
 
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-2">
-      {/* 展開パネル */}
       {open && (
-        <div className="flex flex-col gap-1 bg-slate-900/95 backdrop-blur border border-slate-700 rounded-2xl shadow-2xl px-3 py-2">
-          <span className="text-[10px] font-bold text-slate-400 pb-1.5 mb-0.5 border-b border-slate-700">デモ切替</span>
+        <div className="flex flex-col gap-1 bg-white border border-gray-200 rounded-xl shadow-lg px-2 py-2">
+          <span className="text-[10px] font-bold text-gray-400 px-2 pb-1 mb-0.5 border-b border-gray-100">デモ切替</span>
           {DEMO_VIEWS.map(view => (
             <Link
               key={view.key}
               href={view.href}
               onClick={() => setOpen(false)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                 isActive(view.key)
-                  ? "bg-[#1a3a8f] text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
               }`}
             >
-              <span>{view.icon}</span>
               <span>{view.label}</span>
-              <span className="text-[9px] text-slate-400 font-normal ml-0.5">{view.sub}</span>
+              <span className="text-[9px] font-normal opacity-60">{view.sub}</span>
             </Link>
           ))}
         </div>
       )}
 
-      {/* トグルボタン */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 bg-slate-900/95 backdrop-blur border border-slate-700 rounded-2xl shadow-2xl px-3 py-2 text-xs font-bold text-slate-300 hover:text-white transition-all"
+        className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl shadow-lg px-3 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 transition"
       >
-        <span className="text-[10px]">デモ</span>
+        <span>デモ</span>
         {currentView && (
-          <span className="text-slate-400">{currentView.icon} {currentView.label}</span>
+          <span className="text-blue-600">{currentView.label}</span>
         )}
-        <span className="text-[10px] text-slate-500">{open ? "▼" : "▲"}</span>
+        <svg className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+        </svg>
       </button>
     </div>
   );
@@ -155,26 +154,23 @@ export default function AppShell({
   return (
     <div
       className="h-screen flex overflow-hidden"
-      style={{ fontFamily: "'Inter', 'Hiragino Sans', 'Noto Sans JP', sans-serif", backgroundColor: "#f0f5ff" }}
+      style={{ fontFamily: "'Inter', 'Hiragino Sans', 'Noto Sans JP', sans-serif", backgroundColor: "#f8fafc" }}
     >
       {/* ━━━ Sidebar ━━━ */}
       <aside
-        className="flex flex-col shrink-0 border-r border-slate-700/50 transition-all duration-200"
-        style={{
-          background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
-          width: collapsed ? 56 : 220,
-        }}
+        className="flex flex-col shrink-0 border-r border-gray-200 bg-white transition-all duration-200"
+        style={{ width: collapsed ? 56 : 220 }}
       >
         {/* Logo + collapse toggle */}
-        <div className={`pt-4 pb-3 border-b border-slate-700/40 flex items-center ${collapsed ? "flex-col gap-2 px-2" : "px-4 justify-between"}`}>
+        <div className={`pt-4 pb-3 border-b border-gray-100 flex items-center ${collapsed ? "flex-col gap-2 px-2" : "px-4 justify-between"}`}>
           {collapsed ? (
             <>
-              <div className="bg-white/90 rounded-md p-1 flex items-center justify-center" style={{ width: 36, height: 36 }}>
-                <Image src="/logo-icon.png" alt="UniPoll" width={32} height={32} className="w-full h-full object-contain" />
+              <div className="bg-blue-600 rounded-lg p-1 flex items-center justify-center" style={{ width: 36, height: 36 }}>
+                <Image src="/logo-icon.png" alt="UniPoll" width={32} height={32} className="w-full h-full object-contain brightness-0 invert" />
               </div>
               <button
                 onClick={() => setCollapsed(false)}
-                className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition"
+                className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
                 title="サイドバーを開く"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -185,15 +181,15 @@ export default function AppShell({
           ) : (
             <>
               <div>
-                <div className="inline-block bg-white/90 rounded-md px-2.5 py-1">
+                <div className="inline-block">
                   <Image src="/logo.png" alt="UniPoll" width={160} height={40} className="h-5 w-auto" />
                 </div>
-                <p className="text-[17px] text-blue-400 mt-1 font-bold tracking-wide">UniGuide</p>
-                <p className="text-[10px] text-slate-400 mt-0.5 tracking-wide whitespace-nowrap">選管専用の、業務ガイドツール</p>
+                <p className="text-[15px] text-blue-600 mt-1 font-bold tracking-wide">UniGuide</p>
+                <p className="text-[10px] text-gray-400 mt-0.5 tracking-wide whitespace-nowrap">選管専用の、業務ガイドツール</p>
               </div>
               <button
                 onClick={() => setCollapsed(true)}
-                className="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition shrink-0"
+                className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition shrink-0"
                 title="サイドバーを閉じる"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -206,42 +202,42 @@ export default function AppShell({
 
         {/* Election info — hidden when collapsed */}
         {!collapsed && (
-          <div className="px-4 py-4 border-b border-slate-700/40">
-            <p className="text-[13px] text-white font-bold mb-3">{electionName}</p>
+          <div className="px-4 py-4 border-b border-gray-100">
+            <p className="text-[13px] text-gray-800 font-bold mb-3">{electionName}</p>
             <div className="space-y-1.5 mb-3">
-              <div className="flex items-center gap-2">
-                <p className="text-[11px] text-slate-300">告示日まで</p>
-                <p className="text-lg font-extrabold text-orange-400 tabular-nums">
-                  {daysToAnnouncement}<span className="text-xs text-slate-400 ml-0.5">日</span>
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] text-gray-500">告示日まで</p>
+                <p className="text-lg font-bold text-orange-500 tabular-nums">
+                  {daysToAnnouncement}<span className="text-xs text-gray-400 ml-0.5">日</span>
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <p className="text-[11px] text-slate-300">投票日まで</p>
-                <p className="text-lg font-extrabold text-white tabular-nums">
-                  {daysToVote}<span className="text-xs text-slate-400 ml-0.5">日</span>
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] text-gray-500">投票日まで</p>
+                <p className="text-lg font-bold text-gray-800 tabular-nums">
+                  {daysToVote}<span className="text-xs text-gray-400 ml-0.5">日</span>
                 </p>
               </div>
             </div>
             <div>
-              <div className="flex justify-between text-[10px] text-slate-400 mb-1.5">
+              <div className="flex justify-between text-[10px] text-gray-400 mb-1.5">
                 <span>{progressLabel ?? (user.role === "manager" ? "全体進捗" : "自分の進捗")}</span>
-                <span className="text-white font-semibold">{progressCompleted}%</span>
+                <span className="text-gray-600 font-semibold">{progressCompleted}%</span>
               </div>
-              <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full flex">
-                  <div className="bg-emerald-500 rounded-l-full" style={{ width: `${progressCompleted}%` }} />
-                  <div className="bg-blue-500" style={{ width: `${progressInProgress}%` }} />
+                  <div className="bg-blue-600 rounded-l-full" style={{ width: `${progressCompleted}%` }} />
+                  <div className="bg-blue-300" style={{ width: `${progressInProgress}%` }} />
                 </div>
               </div>
               <div className="flex gap-3 mt-1.5">
-                <span className="flex items-center gap-1 text-[9px] text-slate-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />完了
+                <span className="flex items-center gap-1 text-[9px] text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />完了
                 </span>
-                <span className="flex items-center gap-1 text-[9px] text-slate-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />進行中
+                <span className="flex items-center gap-1 text-[9px] text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-300 inline-block" />進行中
                 </span>
-                <span className="flex items-center gap-1 text-[9px] text-slate-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block" />未着手
+                <span className="flex items-center gap-1 text-[9px] text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-200 inline-block" />未着手
                 </span>
               </div>
             </div>
@@ -261,11 +257,11 @@ export default function AppShell({
                   collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2"
                 } ${
                   active
-                    ? "bg-blue-600/20 text-white font-semibold"
-                    : "text-slate-300 hover:text-white hover:bg-white/5"
+                    ? "bg-blue-50 text-blue-600 font-semibold"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                <NavIcon name={item.icon} className={`w-4 h-4 shrink-0 ${active ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"}`} />
+                <NavIcon name={item.icon} className={`w-4 h-4 shrink-0 ${active ? "text-blue-600" : "text-gray-400"}`} />
                 {!collapsed && <span className="text-[13px] flex-1">{item.label}</span>}
               </Link>
             );
@@ -273,7 +269,7 @@ export default function AppShell({
         </nav>
 
         {/* User info */}
-        <div className={`py-3 border-t border-slate-700/40 ${collapsed ? "px-1.5" : "px-3"}`}>
+        <div className={`py-3 border-t border-gray-100 ${collapsed ? "px-1.5" : "px-3"}`}>
           {collapsed ? (
             <div className="flex justify-center">
               <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold" title={user.name}>
@@ -281,17 +277,17 @@ export default function AppShell({
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 cursor-default">
+            <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm cursor-default">
               <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
                 {initials}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-medium text-slate-200 truncate">{user.name}</p>
-                <p className="text-[11px] text-blue-400/80 truncate">{user.category || (user.role === "manager" ? "係長" : "担当者")}</p>
+                <p className="text-[12px] font-medium text-gray-800 truncate">{user.name}</p>
+                <p className="text-[11px] text-gray-400 truncate">{user.category || (user.role === "manager" ? "係長" : "担当者")}</p>
               </div>
               <button
                 onClick={handleLogout}
-                className="text-slate-500 hover:text-slate-300 transition"
+                className="text-gray-300 hover:text-gray-500 transition"
                 title="ログアウト"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
