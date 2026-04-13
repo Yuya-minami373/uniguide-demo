@@ -7,3 +7,4 @@ data/*.db
 *.db-wal
 *.sqlite3
 senkan.db
+.vercel

@@ -278,93 +278,111 @@ function StatusTab({
         </div>
       </div>
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-5 gap-6" style={{ minHeight: "calc(100vh - 340px)" }}>
-        {/* Left: Location Status List (3 cols) */}
-        <div className="col-span-3 space-y-2">
+      {/* Two-column layout (equal width) */}
+      <div className="grid grid-cols-2 gap-6" style={{ minHeight: "calc(100vh - 340px)" }}>
+        {/* Left: Location Status List */}
+        <div className="space-y-2">
           <h2 className="text-sm font-bold text-gray-700 mb-3">投票所一覧</h2>
           {loading ? (
             <div className="text-sm text-gray-400 py-8 text-center">読み込み中...</div>
           ) : (
-            overview.map(loc => (
-              <button
-                key={loc.id}
-                onClick={() => onSelectLocation(selectedLocationId === loc.id ? null : loc.id)}
-                className={`w-full text-left bg-white rounded-xl border px-5 py-4 transition-all ${
-                  selectedLocationId === loc.id
-                    ? "border-blue-300 ring-2 ring-blue-100"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <span className="text-sm font-bold text-gray-800">{loc.short_name}</span>
-                    <span className="text-[11px] text-gray-400 ml-2">{loc.open_time}〜{loc.close_time}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-lg font-bold text-gray-900 tabular-nums">{loc.total_voters.toLocaleString()}</span>
-                    <span className="text-xs text-gray-400 ml-0.5">名</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {loc.latest_report ? (
-                    <>
-                      <CongestionBadge status={loc.latest_report.congestion_status} />
-                      <OperationBadge status={loc.latest_report.operation_status} />
-                      <span className="text-[10px] text-gray-400 ml-auto">最終報告: {loc.latest_report.time_slot}</span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-gray-400">報告なし</span>
-                  )}
-                </div>
-
-                {/* Hourly detail expansion */}
-                {selectedLocationId === loc.id && hourlyDetail.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-100" onClick={e => e.stopPropagation()}>
-                    <p className="text-[11px] font-bold text-gray-500 mb-2">時間帯別詳細</p>
-                    <div className="space-y-1.5">
-                      {hourlyDetail.map(hr => (
-                        <div key={hr.id} className="flex items-center gap-3 text-xs">
-                          <span className="text-gray-500 tabular-nums w-24 shrink-0">{hr.time_slot}</span>
-                          <span className="tabular-nums w-12 text-right font-medium text-gray-700">{hr.voter_count}名</span>
-                          <CongestionBadge status={hr.congestion_status} />
-                          <OperationBadge status={hr.operation_status} />
-                          {hr.note && (
-                            <span className="text-gray-400 truncate flex-1" title={hr.note}>{hr.note}</span>
-                          )}
-                        </div>
-                      ))}
+            overview.map(loc => {
+              const latestCount = loc.latest_report?.voter_count ?? 0;
+              return (
+                <button
+                  key={loc.id}
+                  onClick={() => onSelectLocation(selectedLocationId === loc.id ? null : loc.id)}
+                  className={`w-full text-left bg-white rounded-xl border px-4 py-3 transition-all ${
+                    selectedLocationId === loc.id
+                      ? "border-blue-300 ring-2 ring-blue-100"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  {/* Row 1: Name + Badges */}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-gray-800">{loc.short_name}</span>
+                      {loc.latest_report ? (
+                        <>
+                          <CongestionBadge status={loc.latest_report.congestion_status} />
+                          <OperationBadge status={loc.latest_report.operation_status} />
+                        </>
+                      ) : (
+                        <span className="text-[10px] text-gray-400">報告なし</span>
+                      )}
                     </div>
-                    {/* Simple bar chart */}
-                    <div className="mt-4">
-                      <p className="text-[11px] font-bold text-gray-500 mb-2">投票者数推移</p>
-                      <div className="flex items-end gap-1 h-20">
-                        {hourlyDetail.map(hr => {
-                          const max = Math.max(...hourlyDetail.map(h => h.voter_count), 1);
-                          const heightPct = (hr.voter_count / max) * 100;
-                          const barColor = hr.congestion_status === "混雑" ? "bg-red-400" : hr.congestion_status === "やや混雑" ? "bg-yellow-400" : "bg-blue-400";
-                          return (
-                            <div key={hr.id} className="flex-1 flex flex-col items-center gap-0.5">
-                              <span className="text-[9px] text-gray-400 tabular-nums">{hr.voter_count}</span>
-                              <div
-                                className={`w-full rounded-t ${barColor}`}
-                                style={{ height: `${heightPct}%`, minHeight: 2 }}
-                              />
-                              <span className="text-[8px] text-gray-400 tabular-nums whitespace-nowrap">{hr.time_slot.split("-")[0]}</span>
-                            </div>
-                          );
-                        })}
+                    <span className="text-[10px] text-gray-400">{loc.open_time}〜{loc.close_time}</span>
+                  </div>
+
+                  {/* Row 2: Stats */}
+                  <div className="flex items-baseline justify-between">
+                    <div className="flex items-baseline gap-3">
+                      <div>
+                        <span className="text-[10px] text-gray-400 mr-1">累計</span>
+                        <span className="text-lg font-bold text-gray-900 tabular-nums">{loc.total_voters.toLocaleString()}</span>
+                        <span className="text-[10px] text-gray-400 ml-0.5">名</span>
+                      </div>
+                      {loc.latest_report && (
+                        <div>
+                          <span className="text-[10px] text-gray-400 mr-1">直近</span>
+                          <span className="text-sm font-semibold text-blue-600 tabular-nums">{latestCount}</span>
+                          <span className="text-[10px] text-gray-400 ml-0.5">名</span>
+                        </div>
+                      )}
+                    </div>
+                    {loc.latest_report && (
+                      <span className="text-[10px] text-gray-400">最終 {loc.latest_report.time_slot}</span>
+                    )}
+                  </div>
+
+                  {/* Hourly detail expansion */}
+                  {selectedLocationId === loc.id && hourlyDetail.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-100" onClick={e => e.stopPropagation()}>
+                      <p className="text-[11px] font-bold text-gray-500 mb-2">時間帯別詳細</p>
+                      <div className="space-y-1">
+                        {hourlyDetail.map(hr => (
+                          <div key={hr.id} className="flex items-center gap-2 text-xs">
+                            <span className="text-gray-500 tabular-nums w-20 shrink-0">{hr.time_slot}</span>
+                            <span className="tabular-nums w-10 text-right font-medium text-gray-700">{hr.voter_count}名</span>
+                            <CongestionBadge status={hr.congestion_status} />
+                            <OperationBadge status={hr.operation_status} />
+                            {hr.note && (
+                              <span className="text-gray-400 truncate flex-1" title={hr.note}>{hr.note}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {/* Simple bar chart */}
+                      <div className="mt-3">
+                        <p className="text-[11px] font-bold text-gray-500 mb-2">投票者数推移</p>
+                        <div className="flex items-end gap-1 h-16">
+                          {hourlyDetail.map(hr => {
+                            const max = Math.max(...hourlyDetail.map(h => h.voter_count), 1);
+                            const heightPct = (hr.voter_count / max) * 100;
+                            const barColor = hr.congestion_status === "混雑" ? "bg-red-400" : hr.congestion_status === "やや混雑" ? "bg-yellow-400" : "bg-blue-400";
+                            return (
+                              <div key={hr.id} className="flex-1 flex flex-col items-center gap-0.5">
+                                <span className="text-[9px] text-gray-400 tabular-nums">{hr.voter_count}</span>
+                                <div
+                                  className={`w-full rounded-t ${barColor}`}
+                                  style={{ height: `${heightPct}%`, minHeight: 2 }}
+                                />
+                                <span className="text-[8px] text-gray-400 tabular-nums whitespace-nowrap">{hr.time_slot.split("-")[0]}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </button>
-            ))
+                  )}
+                </button>
+              );
+            })
           )}
         </div>
 
-        {/* Right: Incident History (2 cols) */}
-        <div className="col-span-2">
+        {/* Right: Incident History */}
+        <div>
           <h2 className="text-sm font-bold text-gray-700 mb-3">対応履歴</h2>
           <div className="bg-white rounded-xl border border-gray-200 px-5 py-4 h-full">
             {allIncidents.length === 0 ? (
