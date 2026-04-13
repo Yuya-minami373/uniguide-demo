@@ -110,26 +110,29 @@ const CATEGORY_CONFIG: Record<string, { label: string; sublabel: string; color: 
 interface Props {
   session: User;
   demoMode?: boolean;
+  initialOverview?: LocationOverview[];
 }
 
-export default function CrewDashboardClient({ session, demoMode = false }: Props) {
+export default function CrewDashboardClient({ session, demoMode = false, initialOverview }: Props) {
   const [activeTab, setActiveTab] = useState<"status" | "daily" | "classification">("status");
   const [date, setDate] = useState("2026-07-06"); // Demo default date
-  const [overview, setOverview] = useState<LocationOverview[]>([]);
+  const [overview, setOverview] = useState<LocationOverview[]>(initialOverview ?? []);
   const [dailyReports, setDailyReports] = useState<DailyReport[]>([]);
   const [classifications, setClassifications] = useState<Classification[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
   const [hourlyDetail, setHourlyDetail] = useState<HourlyReport[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialOverview);
 
-  // Fetch overview data
+  // Fetch overview data (skip initial load if server-provided)
+  const [initialDate] = useState("2026-07-06");
   useEffect(() => {
+    if (date === initialDate && initialOverview) return;
     setLoading(true);
     fetch(`/api/crew/overview?date=${date}`)
       .then(r => r.json())
       .then(data => { setOverview(data); setLoading(false); })
       .catch(() => setLoading(false));
-  }, [date]);
+  }, [date, initialDate, initialOverview]);
 
   // Fetch daily reports when tab switches
   useEffect(() => {
