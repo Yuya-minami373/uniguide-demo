@@ -218,7 +218,7 @@ export default function AppShell({
             <p className="text-[13px] text-gray-800 font-bold mb-3">{electionName}</p>
             <div className="space-y-1.5 mb-3">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] text-gray-500">告示まで</p>
+                <p className="text-[11px] text-gray-500">告示日まで</p>
                 <p className="text-lg font-bold text-orange-500 tabular-nums">
                   {Math.round((new Date("2026-05-04T00:00:00+09:00").getTime() - new Date(new Date().toISOString().slice(0,10) + "T00:00:00+09:00").getTime()) / 86400000)}<span className="text-xs text-gray-400 ml-0.5">日</span>
                 </p>
