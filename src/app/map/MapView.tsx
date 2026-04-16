@@ -16,10 +16,19 @@ interface Station {
   type: "polling" | "poster" | "early";
 }
 
+interface CityConfig {
+  city: string;
+  label: string;
+  center: [number, number];
+  bounds: [[number, number], [number, number]];
+  boundaryFile: string;
+}
+
 interface Props {
   stations: Station[];
   selectedStation: Station | null;
   onSelectStation: (s: Station) => void;
+  cityConfig: CityConfig;
 }
 
 function createMarkerIcon(type: "polling" | "poster" | "early", no: number, isSelected: boolean) {
@@ -46,14 +55,12 @@ function createMarkerIcon(type: "polling" | "poster" | "early", no: number, isSe
   });
 }
 
-/** 市原市の境界GeoJSON（MultiPolygon）から外側をマスクするポリゴンを生成 */
+/** 境界GeoJSON（MultiPolygon/Polygon）から外側をマスクするポリゴンを生成 */
 function buildMaskCoords(geometry: GeoJSON.MultiPolygon | GeoJSON.Polygon): L.LatLngExpression[][] {
-  // 世界全体を覆う外枠（反時計回り）
   const world: L.LatLngExpression[] = [
     [-90, -180], [-90, 180], [90, 180], [90, -180], [-90, -180],
   ];
 
-  // 市原市の境界を穴として追加（時計回り = GeoJSON座標を[lng,lat]→[lat,lng]変換）
   const holes: L.LatLngExpression[][] = [];
   const polys = geometry.type === "MultiPolygon" ? geometry.coordinates : [geometry.coordinates];
   for (const poly of polys) {
@@ -65,27 +72,35 @@ function buildMaskCoords(geometry: GeoJSON.MultiPolygon | GeoJSON.Polygon): L.La
   return [world, ...holes];
 }
 
-export default function MapView({ stations, selectedStation, onSelectStation }: Props) {
+export default function MapView({ stations, selectedStation, onSelectStation, cityConfig }: Props) {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const overlayRef = useRef<L.Layer[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Initialize map
+  // Initialize / re-initialize map when city changes
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    // Clean up previous map
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+    markersRef.current = [];
+    overlayRef.current = [];
 
-    // 市原市の範囲
-    const ichiharaBounds = L.latLngBounds(
-      [35.23, 139.95],
-      [35.58, 140.27],
+    if (!containerRef.current) return;
+
+    const cityBounds = L.latLngBounds(
+      cityConfig.bounds[0] as [number, number],
+      cityConfig.bounds[1] as [number, number],
     );
 
     const map = L.map(containerRef.current, {
       zoomControl: false,
-      maxBounds: ichiharaBounds.pad(0.05),
+      maxBounds: cityBounds.pad(0.05),
       maxBoundsViscosity: 1.0,
       minZoom: 10,
-    }).fitBounds(ichiharaBounds);
+    }).fitBounds(cityBounds);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -94,33 +109,34 @@ export default function MapView({ stations, selectedStation, onSelectStation }: 
 
     L.control.zoom({ position: "topright" }).addTo(map);
 
-    // 市原市の境界を読み込み、外側をマスク
-    fetch("/ichihara-boundary.geojson")
-      .then(r => r.json())
-      .then((feature: GeoJSON.Feature) => {
-        const geom = feature.geometry as GeoJSON.MultiPolygon | GeoJSON.Polygon;
+    // Load boundary GeoJSON
+    if (cityConfig.boundaryFile) {
+      fetch(`/${cityConfig.boundaryFile}`)
+        .then(r => r.json())
+        .then((feature: GeoJSON.Feature) => {
+          const geom = feature.geometry as GeoJSON.MultiPolygon | GeoJSON.Polygon;
 
-        // マスク（市原市以外を半透明白で塗りつぶし）
-        const maskCoords = buildMaskCoords(geom);
-        L.polygon(maskCoords, {
-          color: "transparent",
-          fillColor: "#ffffff",
-          fillOpacity: 0.75,
-          interactive: false,
-        }).addTo(map);
+          const mask = L.polygon(buildMaskCoords(geom), {
+            color: "transparent",
+            fillColor: "#ffffff",
+            fillOpacity: 0.75,
+            interactive: false,
+          }).addTo(map);
 
-        // 市原市の境界線
-        L.geoJSON(feature as GeoJSON.Feature, {
-          style: {
-            color: "#2563eb",
-            weight: 2.5,
-            opacity: 0.6,
-            fillColor: "transparent",
-            fillOpacity: 0,
-          },
-          interactive: false,
-        }).addTo(map);
-      });
+          const border = L.geoJSON(feature as GeoJSON.Feature, {
+            style: {
+              color: "#2563eb",
+              weight: 2.5,
+              opacity: 0.6,
+              fillColor: "transparent",
+              fillOpacity: 0,
+            },
+            interactive: false,
+          }).addTo(map);
+
+          overlayRef.current.push(mask, border);
+        });
+    }
 
     mapRef.current = map;
 
@@ -128,7 +144,7 @@ export default function MapView({ stations, selectedStation, onSelectStation }: 
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [cityConfig]);
 
   // Update markers
   useEffect(() => {

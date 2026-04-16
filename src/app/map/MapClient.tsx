@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import type { User } from "@/lib/auth";
 import dynamic from "next/dynamic";
@@ -17,15 +18,25 @@ interface Station {
   type: "polling" | "poster" | "early";
 }
 
+interface CityConfig {
+  city: string;
+  label: string;
+  center: [number, number];
+  bounds: [[number, number], [number, number]];
+  boundaryFile: string;
+}
+
 interface Props {
   user: User;
   stations: Station[];
+  cityConfig: CityConfig;
+  cityConfigs: CityConfig[];
 }
 
-// Leaflet はSSR不可なのでdynamic importで読み込む
 const MapView = dynamic(() => import("./MapView"), { ssr: false });
 
-export default function MapClient({ user, stations }: Props) {
+export default function MapClient({ user, stations, cityConfig, cityConfigs }: Props) {
+  const router = useRouter();
   const [showPolling, setShowPolling] = useState(true);
   const [showEarly, setShowEarly] = useState(true);
   const [showPoster, setShowPoster] = useState(true);
@@ -34,6 +45,12 @@ export default function MapClient({ user, stations }: Props) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  // Reset selection when city changes
+  useEffect(() => {
+    setSelectedStation(null);
+    setSearchQuery("");
+  }, [cityConfig.city]);
 
   const pollingStations = stations.filter(s => s.type === "polling");
   const earlyStations = stations.filter(s => s.type === "early");
@@ -45,7 +62,6 @@ export default function MapClient({ user, stations }: Props) {
     if (s.type === "poster" && !showPoster) return false;
     if (searchQuery) {
       const q = searchQuery.trim();
-      // 数字のみの場合は投票所番号で完全一致/前方一致
       if (/^\d+$/.test(q)) {
         return String(s.no) === q || String(s.no).startsWith(q);
       }
@@ -55,15 +71,34 @@ export default function MapClient({ user, stations }: Props) {
     return true;
   });
 
+  const handleCityChange = (newCity: string) => {
+    router.push(`/map?city=${newCity}`);
+  };
+
   return (
     <AppShell user={user}>
       <div className="flex-1 flex overflow-hidden">
         {/* Left: Controls + List */}
         <div className="w-[320px] shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
-          {/* Header */}
+          {/* Header with city selector */}
           <div className="px-4 py-3 border-b border-gray-100">
-            <h1 className="text-sm font-bold text-gray-900">投票所・掲示場マップ</h1>
-            <p className="text-[10px] text-gray-400 mt-0.5">投票所 95箇所 / 期日前 {earlyStations.length}箇所 / 掲示場 {posterStations.length}箇所</p>
+            <div className="flex items-center justify-between gap-2">
+              <h1 className="text-sm font-bold text-gray-900">投票所・掲示場マップ</h1>
+              {cityConfigs.length > 1 && (
+                <select
+                  value={cityConfig.city}
+                  onChange={e => handleCityChange(e.target.value)}
+                  className="text-xs font-semibold px-2 py-1 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                >
+                  {cityConfigs.map(c => (
+                    <option key={c.city} value={c.city}>{c.label}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <p className="text-[10px] text-gray-400 mt-0.5">
+              投票所 {pollingStations.length}箇所 / 期日前 {earlyStations.length}箇所 / 掲示場 {posterStations.length}箇所
+            </p>
           </div>
 
           {/* Search */}
@@ -158,6 +193,7 @@ export default function MapClient({ user, stations }: Props) {
               stations={filteredStations}
               selectedStation={selectedStation}
               onSelectStation={setSelectedStation}
+              cityConfig={cityConfig}
             />
           )}
 

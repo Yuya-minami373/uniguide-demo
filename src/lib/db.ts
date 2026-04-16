@@ -116,7 +116,8 @@ async function createSchema(c: Client): Promise<void> {
       lng REAL NOT NULL,
       voting_area TEXT,
       accessibility TEXT,
-      type TEXT NOT NULL CHECK(type IN ('polling', 'poster', 'early'))
+      type TEXT NOT NULL CHECK(type IN ('polling', 'poster', 'early')),
+      city TEXT NOT NULL DEFAULT 'ichihara'
     )`,
     `CREATE TABLE IF NOT EXISTS crew_locations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -834,131 +835,37 @@ async function seedCallLogs(c: Client): Promise<void> {
 }
 
 async function seedMapPoints(c: Client): Promise<void> {
-  // Polling stations
-  await c.execute(`INSERT INTO map_points (no, name, address, lat, lng, voting_area, accessibility, type) VALUES
-    (1, '椎津会館', '市原市椎津230番地', 35.4727591, 140.0353002, NULL, NULL, 'polling'),
-    (2, '上町中央公民館', '市原市姉崎東2丁目2番地13', 35.4762475, 140.0420835, NULL, NULL, 'polling'),
-    (3, '姉崎公民館体育室', '市原市姉崎2150番地1', 35.4715358, 140.0447228, NULL, NULL, 'polling'),
-    (4, '富士見自治会館', '市原市姉崎899番地', 35.484414, 140.044409, NULL, NULL, 'polling'),
-    (5, '千種コミュニティセンター', '市原市千種2丁目1番地2', 35.4938049, 140.0583511, NULL, NULL, 'polling'),
-    (6, '明神小学校体育館', '市原市姉崎1850番地', 35.4793818, 140.05068, NULL, NULL, 'polling'),
-    (7, '青葉台小学校体育館', '市原市青葉台1丁目10番地1', 35.4711339, 140.0606632, NULL, NULL, 'polling'),
-    (8, '有秋東小学校体育館', '市原市不入斗753番地', 35.4540937, 140.057938, NULL, NULL, 'polling'),
-    (9, '有秋公民館体育室', '市原市有秋台西1丁目3番地2', 35.4534644, 140.0502401, NULL, NULL, 'polling'),
-    (10, '有秋南小学校体育館', '市原市桜台3丁目1番地1', 35.4430855, 140.0511038, NULL, NULL, 'polling'),
-    (11, '市原青少年会館', '市原市八幡1126番地1', 35.5385123, 140.1157182, NULL, NULL, 'polling'),
-    (12, '八幡小学校体育館', '市原市八幡530番地', 35.5341601, 140.1218551, NULL, NULL, 'polling'),
-    (13, '石塚小学校体育館', '市原市八幡石塚2丁目4番地', 35.5449572, 140.1306581, NULL, NULL, 'polling'),
-    (14, '五所町民館', '市原市五所1611番地', 35.5302464, 140.1103752, NULL, NULL, 'polling'),
-    (15, '白金小学校体育館', '市原市君塚3丁目19番地', 35.5236038, 140.1073336, NULL, NULL, 'polling'),
-    (16, '若宮小学校体育館', '市原市若宮3丁目13番地', 35.5273017, 140.1345419, NULL, NULL, 'polling'),
-    (17, '山木会館', '市原市能満326番地2', 35.5211982, 140.1366367, NULL, NULL, 'polling'),
-    (18, '菊間小学校体育館', '市原市菊間1620番地1', 35.537338, 140.1505655, NULL, NULL, 'polling'),
-    (19, '菊間中学校柔剣道場', '市原市菊間1850番地', 35.5349109, 140.1462632, NULL, NULL, 'polling'),
-    (20, '草刈公民館', '市原市草刈964番地', 35.5317154, 140.1643842, NULL, NULL, 'polling'),
-    (21, '市原小学校体育館', '市原市能満1320番地', 35.5088368, 140.127713, NULL, NULL, 'polling'),
-    (22, '旧玉泉幼稚園', '市原市門前2丁目220番地', 35.5167337, 140.1268279, NULL, NULL, 'polling'),
-    (23, '能満公民館', '市原市能満666番地', 35.5127559, 140.13374, NULL, NULL, 'polling'),
-    (24, '能満分区公民館', '市原市能満2116番地95', 35.4965259, 140.1457697, NULL, NULL, 'polling'),
-    (25, '辰巳台中学校体育館', '市原市辰巳台東2丁目2番地', 35.521137, 140.1540577, NULL, NULL, 'polling'),
-    (26, '辰巳台東小学校体育館', '市原市辰巳台東4丁目13番地', 35.5136663, 140.1530492, NULL, NULL, 'polling'),
-    (27, '辰巳台西小学校体育館', '市原市辰巳台西4丁目16番地', 35.5239051, 140.1483607, NULL, NULL, 'polling'),
-    (28, '五井会館ロビー', '市原市五井中央西2丁目3番地13', 35.5145003, 140.0901702, NULL, NULL, 'polling'),
-    (29, '五井小学校体育館', '市原市五井東1丁目6番地3', 35.5148671, 140.0945878, NULL, NULL, 'polling'),
-    (30, '若葉中学校柔剣道場', '市原市五井5308番地', 35.5228442, 140.0868737, NULL, NULL, 'polling'),
-    (31, '五井中学校柔剣道場', '市原市五井922番地2', 35.5092778, 140.0792938, NULL, NULL, 'polling'),
-    (32, '京葉小学校体育館', '市原市五井西3丁目9番地2', 35.5194473, 140.0739508, NULL, NULL, 'polling'),
-    (33, '村上やすらぎ会館', '市原市村上1420番地1', 35.4942395, 140.0982651, NULL, NULL, 'polling'),
-    (34, '君塚自治会館', '市原市君塚1丁目29番地2', 35.5208249, 140.1027846, NULL, NULL, 'polling'),
-    (35, '白金町町会会館', '市原市白金町4丁目24番地', 35.527472, 140.1021999, NULL, NULL, 'polling'),
-    (36, '上郷公民館', '市原市海保691番地', 35.472355, 140.0794896, NULL, NULL, 'polling'),
-    (37, '東海小学校体育館', '市原市廿五里558番地', 35.4881465, 140.0772687, NULL, NULL, 'polling'),
-    (38, '谷島野公民館', '市原市島野1950番地', 35.5018343, 140.0713223, NULL, NULL, 'polling'),
-    (39, '千種中学校体育館', '市原市千種6丁目1番地1', 35.4964123, 140.058968, NULL, NULL, 'polling'),
-    (40, '国分寺台西小学校体育館', '市原市西国分寺台2丁目11番地1', 35.5049459, 140.1133954, NULL, NULL, 'polling'),
-    (41, '国分寺台西中学校柔剣道場', '市原市国分寺台中央5丁目1番地1', 35.5030855, 140.1172685, NULL, NULL, 'polling'),
-    (42, '国分寺台東小学校体育館', '市原市東国分寺台5丁目1番地', 35.4962376, 140.1201868, NULL, NULL, 'polling'),
-    (43, '国分寺台中学校柔剣道場', '市原市南国分寺台2丁目1番地', 35.4928047, 140.1129019, NULL, NULL, 'polling'),
-    (45, '東海中学校柔剣道場', '市原市今富477番地', 35.4818019, 140.0911867, NULL, NULL, 'polling'),
-    (46, '海士公民館', '市原市海士有木1737番地', 35.4782417, 140.1237997, NULL, NULL, 'polling'),
-    (47, '三和コミュニティセンター', '市原市海士有木235番地', 35.4647858, 140.1250362, NULL, NULL, 'polling'),
-    (48, '養老小学校体育館', '市原市松崎820番地', 35.4482861, 140.1342523, NULL, NULL, 'polling'),
-    (49, '新堀公民館', '市原市新堀214番地2', 35.463226, 140.1383695, NULL, NULL, 'polling'),
-    (50, '川在農村協同館', '市原市川在490番地', 35.4348732, 140.161879, NULL, NULL, 'polling'),
-    (51, '海上小学校体育館', '市原市神代125番地', 35.4705966, 140.0990134, NULL, NULL, 'polling'),
-    (52, '光風台小学校体育館', '市原市光風台4丁目546番地', 35.4462977, 140.0985145, NULL, NULL, 'polling'),
-    (53, '双葉中学校体育館', '市原市光風台1丁目475番地', 35.4454805, 140.113964, NULL, NULL, 'polling'),
-    (54, '金剛地ふれあい館', '市原市金剛地848番地1', 35.4956306, 140.2431419, NULL, NULL, 'polling'),
-    (55, '東国吉公民館', '市原市東国吉693番地', 35.5069372, 140.2151638, NULL, NULL, 'polling'),
-    (56, '瀬又公民館', '市原市瀬又134番地1', 35.5300259, 140.2068704, NULL, NULL, 'polling'),
-    (57, 'グリーンヒルセンター', '市原市押沼934番地', 35.5428402, 140.2069804, NULL, NULL, 'polling'),
-    (58, '番場公民館', '市原市番場131番地', 35.5222766, 140.1904204, NULL, NULL, 'polling'),
-    (59, '潤井戸新田青年館', '市原市潤井戸998番地1', 35.5172249, 140.1726427, NULL, NULL, 'polling'),
-    (60, '湿津小学校', '市原市潤井戸2299番地14', 35.4984039, 140.1801395, NULL, NULL, 'polling'),
-    (61, '小田部公民館', '市原市小田部352番地', 35.4923811, 140.1539075, NULL, NULL, 'polling'),
-    (62, '水の江小学校体育館', '市原市ちはら台東2丁目15番地', 35.5340422, 140.1919037, NULL, NULL, 'polling'),
-    (63, '清水谷小学校体育館', '市原市ちはら台南5丁目2番地', 35.5273017, 140.185697, NULL, NULL, 'polling'),
-    (64, '牧園小学校体育館', '市原市ちはら台南2丁目7番地', 35.5259134, 140.1761859, NULL, NULL, 'polling'),
-    (65, 'ちはら台桜小学校体育館', '市原市ちはら台東5丁目13番地', 35.5387, 140.1948219, NULL, NULL, 'polling'),
-    (66, '宿滝町会集会場', '市原市平蔵2204番地', 35.3478847, 140.1999691, NULL, NULL, 'polling'),
-    (67, '根古屋農村協同館', '市原市平蔵619番地', 35.3347636, 140.2071627, NULL, NULL, 'polling'),
-    (68, '上畑公民館', '市原市米原347番地', 35.3244023, 140.212908, NULL, NULL, 'polling'),
-    (69, '小草畑公民館', '市原市小草畑61番地', 35.3194607, 140.1896667, NULL, NULL, 'polling'),
-    (70, '上田尾公民館', '市原市田尾125番地', 35.3618479, 140.1860994, NULL, NULL, 'polling'),
-    (71, '鶴舞公民館', '市原市鶴舞624番地', 35.3817768, 140.1833903, NULL, NULL, 'polling'),
-    (72, '鶴舞土地改良区事務所', '市原市池和田1314番地', 35.3820983, 140.1638773, NULL, NULL, 'polling'),
-    (73, '奥野下公民館', '市原市奥野270番地', 35.3978922, 140.1889076, NULL, NULL, 'polling'),
-    (74, '旧内田小学校体育館', '市原市島田20番地', 35.4047179, 140.1745176, NULL, NULL, 'polling'),
-    (75, '米沢大西公民館', '市原市米沢713番地', 35.399685, 140.1502892, NULL, NULL, 'polling'),
-    (76, '南総支所会議室', '市原市牛久500番地', 35.4009772, 140.134719, NULL, NULL, 'polling'),
-    (77, '戸田小学校体育館', '市原市馬立830番地', 35.4244329, 140.1162305, NULL, NULL, 'polling'),
-    (78, '旧寺谷小学校体育館', '市原市寺谷687番地1', 35.4079927, 140.1050108, NULL, NULL, 'polling'),
-    (79, '藪岩青年館', '市原市岩26番地1', 35.3796818, 140.1488488, NULL, NULL, 'polling'),
-    (80, '牛久小学校体育館', '市原市皆吉933番地2', 35.395028, 140.1380074, NULL, NULL, 'polling'),
-    (81, '西国吉自治会館', '市原市西国吉426番地8', 35.3935412, 140.1206535, NULL, NULL, 'polling'),
-    (82, '奉免自治会館', '市原市奉免1233番地', 35.4102291, 140.1439592, NULL, NULL, 'polling'),
-    (83, '北久保会館', '市原市久保466番地', 35.3711962, 140.1544761, NULL, NULL, 'polling'),
-    (84, '加茂公民館', '市原市養老949番地1', 35.3547561, 140.1520407, NULL, NULL, 'polling'),
-    (85, '下古敷谷自治会館', '市原市古敷谷375番地1', 35.337081, 140.172239, NULL, NULL, 'polling'),
-    (86, '新井青年館', '市原市新井150番地', 35.3475018, 140.1860028, NULL, NULL, 'polling'),
-    (87, '月崎公民館', '市原市月崎385番地', 35.3038835, 140.1447021, NULL, NULL, 'polling'),
-    (88, '白鳥公民館', '市原市大久保505番地', 35.2840142, 140.1468211, NULL, NULL, 'polling'),
-    (89, '朝生原青年館', '市原市朝生原502番地', 35.2647948, 140.1640301, NULL, NULL, 'polling'),
-    (90, '石塚公民館', '市原市石塚224番地', 35.268014, 140.1202753, NULL, NULL, 'polling'),
-    (91, '月出自治会館', '市原市月出1060番地1', 35.2934415, 140.1827225, NULL, NULL, 'polling'),
-    (92, '田淵会館', '市原市田淵', 35.2971522, 140.1498252, NULL, NULL, 'polling'),
-    (93, '徳氏会館', '市原市徳氏275番地1', 35.317323, 140.15185, NULL, NULL, 'polling'),
-    (94, '万田野自治会館', '市原市万田野85番地', 35.3211546, 140.1153345, NULL, NULL, 'polling'),
-    (95, '加茂支所', '市原市平野583番地3', 35.3354201, 140.1481595, NULL, NULL, 'polling')`);
+  // JSON files from public/data/ — each city has its own file
+  const cities = ["ichihara", "fukaya"];
+  const fs = await import("fs");
+  const path = await import("path");
 
-  // Early voting stations
-  await c.execute(`INSERT INTO map_points (no, name, address, lat, lng, voting_area, accessibility, type) VALUES
-    (1, '市役所第1庁舎1階 市民プラザ', '市原市国分寺台中央1丁目1番地1', 35.4979145, 140.1155526, NULL, NULL, 'early'),
-    (2, '姉崎保健福祉センター 2階展示ホール', '市原市椎津1131番地1', 35.4735, 140.0360, NULL, NULL, 'early'),
-    (3, '五井会館 ロビー', '市原市五井中央西2丁目3番地13', 35.5145003, 140.0901702, NULL, NULL, 'early'),
-    (4, 'アリオ市原 1階従業員会議室', '市原市更科4丁目3番地2', 35.5082618, 140.1013226, NULL, NULL, 'early'),
-    (5, '市原青少年会館 集会室', '市原市八幡1126番地1', 35.5385123, 140.1157182, NULL, NULL, 'early'),
-    (6, '市津支所 会議室', '市原市下野90番地1', 35.4950, 140.1780, NULL, NULL, 'early'),
-    (7, '南総支所 会議室', '市原市牛久500番地', 35.4009772, 140.134719, NULL, NULL, 'early'),
-    (8, '加茂支所 会議室', '市原市平野583番地3', 35.3354201, 140.1481595, NULL, NULL, 'early')`);
+  for (const city of cities) {
+    const jsonPath = path.join(process.cwd(), "public", "data", `${city}.json`);
+    if (!fs.existsSync(jsonPath)) continue;
 
-  // Poster boards
-  await c.execute(`INSERT INTO map_points (no, name, address, lat, lng, voting_area, accessibility, type) VALUES
-    (1, '姉崎駅前交差点付近', '市原市姉崎駅前1丁目', 35.4720, 140.0670, NULL, NULL, 'poster'),
-    (2, '五井駅東口ロータリー', '市原市五井中央東1丁目', 35.5230, 140.1080, NULL, NULL, 'poster'),
-    (3, '国分寺台中央公園前', '市原市国分寺台中央2丁目', 35.4975, 140.1190, NULL, NULL, 'poster'),
-    (4, '有秋台バス停前', '市原市有秋台西2丁目', 35.4555, 140.0640, NULL, NULL, 'poster'),
-    (5, '辰巳台商店街入口', '市原市辰巳台東3丁目', 35.5130, 140.1310, NULL, NULL, 'poster'),
-    (6, '八幡宿駅前', '市原市八幡海岸通', 35.5310, 140.1160, NULL, NULL, 'poster'),
-    (7, '市津緑地公園入口', '市原市山田橋2丁目', 35.5060, 140.1760, NULL, NULL, 'poster'),
-    (8, '青葉台交差点', '市原市青葉台4丁目', 35.4615, 140.0575, NULL, NULL, 'poster'),
-    (9, '鶴舞郵便局前', '市原市鶴舞580', 35.3345, 140.1540, NULL, NULL, 'poster'),
-    (10, '南総公民館前', '市原市鶴舞250', 35.3295, 140.1495, NULL, NULL, 'poster'),
-    (11, 'ちはら台駅前広場', '市原市ちはら台西1丁目', 35.5150, 140.1650, NULL, NULL, 'poster'),
-    (12, '白金町バス停前', '市原市白金町3丁目', 35.5255, 140.1210, NULL, NULL, 'poster'),
-    (13, '五井西中学校前', '市原市五井西6丁目', 35.5180, 140.0920, NULL, NULL, 'poster'),
-    (14, '姉崎保健福祉センター前', '市原市姉崎3583-1', 35.4740, 140.0700, NULL, NULL, 'poster'),
-    (15, '千種体育館前', '市原市千種2丁目', 35.4825, 140.0810, NULL, NULL, 'poster')`);
+    const data = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
+    const stations: Array<{
+      no: number; name: string; address: string;
+      lat: number; lng: number;
+      voting_area: string | null; accessibility: string | null;
+      type: string;
+    }> = data.stations;
+
+    // Batch insert 20 at a time
+    for (let i = 0; i < stations.length; i += 20) {
+      const batch = stations.slice(i, i + 20);
+      const placeholders = batch.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?)").join(",\n    ");
+      const values = batch.flatMap(s => [
+        s.no, s.name, s.address, s.lat, s.lng,
+        s.voting_area ?? null, s.accessibility ?? null, s.type, city,
+      ]);
+      await c.execute({
+        sql: `INSERT INTO map_points (no, name, address, lat, lng, voting_area, accessibility, type, city) VALUES\n    ${placeholders}`,
+        args: values,
+      });
+    }
+  }
 }
 
 async function seedCrewUsers(c: Client): Promise<void> {
