@@ -14,6 +14,7 @@ interface Kian {
   due_timing: string | null;
   status: string;
   note: string | null;
+  kind: "起案" | "議案";
 }
 
 interface Props {
@@ -116,10 +117,16 @@ export default function KianClient({ user, kians }: Props) {
                 {!collapsed[cat] && <div className="divide-y divide-gray-50">
                   {items.map(kian => {
                     const st = STATUS_STYLE[kian.status as keyof typeof STATUS_STYLE] ?? STATUS_STYLE["未着手"];
+                    const isGian = kian.kind === "議案";
                     return (
-                      <div key={kian.id} className="grid items-center px-5 py-3 hover:bg-gray-50/50 transition" style={{ gridTemplateColumns: "12px 1fr 120px 64px 180px" }}>
+                      <div key={kian.id} className={`grid items-center px-5 py-3 transition ${isGian ? "bg-purple-50/60 hover:bg-purple-50" : "hover:bg-gray-50/50"}`} style={{ gridTemplateColumns: "12px auto 1fr 120px 64px 180px" }}>
                         {/* Status dot */}
                         <span className={`w-2 h-2 rounded-full ${st.dot}`} />
+
+                        {/* Kind badge */}
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mr-2 ${isGian ? "bg-purple-100 text-purple-700 border border-purple-200" : "bg-gray-100 text-gray-500 border border-gray-200"}`}>
+                          {kian.kind}
+                        </span>
 
                         {/* Title + note */}
                         <div className="min-w-0 pr-3">
