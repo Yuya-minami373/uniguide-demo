@@ -104,7 +104,7 @@ interface AppShellProps {
 const NAV_ITEMS_STAFF: { id: string; icon: IconName; label: string; href: string }[] = [
   { id: "my-projects", icon: "grid",           label: "Myプロジェクト", href: "/dashboard" },
   { id: "calls",       icon: "phone",          label: "受電記録",       href: "/calls" },
-  { id: "kian",        icon: "clipboard-doc",  label: "起案一覧",       href: "/kian" },
+  { id: "kian",        icon: "clipboard-doc",  label: "起案・議案一覧",       href: "/kian" },
   { id: "manuals",     icon: "book-open",      label: "マニュアル",     href: "/manuals" },
   { id: "map",         icon: "map-pin",        label: "投票所・ポス掲マップ", href: "/map" },
   { id: "crew",        icon: "users",          label: "UniPollクルー",  href: "/crew" },
@@ -114,7 +114,7 @@ const NAV_ITEMS_MANAGER: { id: string; icon: IconName; label: string; href: stri
   { id: "manager",    icon: "grid",            label: "ダッシュボード", href: "/manager" },
   { id: "categories", icon: "chart-bar",       label: "業務別進捗",     href: "/manager/categories" },
   { id: "calls",      icon: "phone",           label: "受電記録",       href: "/calls" },
-  { id: "kian",       icon: "clipboard-doc",   label: "起案一覧",       href: "/kian" },
+  { id: "kian",       icon: "clipboard-doc",   label: "起案・議案一覧",       href: "/kian" },
   { id: "manuals",    icon: "book-open",       label: "マニュアル",     href: "/manuals" },
   { id: "map",        icon: "map-pin",         label: "投票所・ポス掲マップ", href: "/map" },
   { id: "crew",       icon: "users",           label: "UniPollクルー",  href: "/crew" },

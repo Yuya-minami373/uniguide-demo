@@ -52,7 +52,7 @@ export default function KianClient({ user, kians }: Props) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] text-gray-400 font-medium tracking-wide">起案管理</p>
-              <h1 className="text-base font-bold text-gray-900 leading-tight">起案一覧</h1>
+              <h1 className="text-base font-bold text-gray-900 leading-tight">起案・議案一覧</h1>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3 text-sm">
