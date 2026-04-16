@@ -119,12 +119,12 @@ export default function KianClient({ user, kians }: Props) {
                     const st = STATUS_STYLE[kian.status as keyof typeof STATUS_STYLE] ?? STATUS_STYLE["未着手"];
                     const isGian = kian.kind === "議案";
                     return (
-                      <div key={kian.id} className={`grid items-center px-5 py-3 transition ${isGian ? "bg-purple-50/60 hover:bg-purple-50" : "hover:bg-gray-50/50"}`} style={{ gridTemplateColumns: "12px auto 1fr 120px 64px 180px" }}>
+                      <div key={kian.id} className={`grid items-center px-5 py-3 transition ${isGian ? "hover:bg-sky-100/80" : "hover:bg-gray-50/50"}`} style={{ gridTemplateColumns: "12px auto 1fr 120px 64px 180px", ...(isGian ? { backgroundColor: "rgba(186, 230, 253, 0.35)" } : {}) }}>
                         {/* Status dot */}
                         <span className={`w-2 h-2 rounded-full ${st.dot}`} />
 
                         {/* Kind badge */}
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mr-2 ${isGian ? "bg-purple-100 text-purple-700 border border-purple-200" : "bg-gray-100 text-gray-500 border border-gray-200"}`}>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mr-2 ${isGian ? "bg-sky-100 text-sky-700 border border-sky-200" : "bg-gray-100 text-gray-500 border border-gray-200"}`}>
                           {kian.kind}
                         </span>
 
