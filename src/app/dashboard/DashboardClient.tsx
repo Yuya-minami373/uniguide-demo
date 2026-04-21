@@ -27,13 +27,6 @@ interface Task {
   playbook_pitfalls: string;
 }
 
-function getPlaybookCounts(task: Task) {
-  let pitfalls = 0, conditions = 0;
-  try { pitfalls = (JSON.parse(task.playbook_pitfalls || "[]") as unknown[]).length; } catch { /* ignore */ }
-  try { conditions = (JSON.parse(task.playbook_conditions || "[]") as unknown[]).length; } catch { /* ignore */ }
-  return { pitfalls, conditions };
-}
-
 interface DashboardClientProps {
   user: User;
   tasks: Task[];
@@ -240,14 +233,13 @@ export default function DashboardClient({
 
           const inProgressCount = activeTasks.filter(t => t.status === "進行中").length;
           const pendingCount = activeTasks.filter(t => t.status === "確認待ち").length;
-          const announceDiff = Math.round((new Date(ANNOUNCEMENT_DATE + "T00:00:00").getTime() - new Date(today + "T00:00:00").getTime()) / 86400000);
 
           return (
           <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#f8fafc" }}>
 
             {/* ── KPIバー ── */}
             <div className="px-5 pt-4">
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 <div className={`bg-white rounded-xl border px-4 py-3 ${todayTasks.length > 0 ? "border-red-200" : "border-gray-200"}`}>
                   <p className="text-[10px] font-semibold text-gray-400 mb-1">今日期限</p>
                   <p className={`text-2xl font-bold tabular-nums ${todayTasks.length > 0 ? "text-red-600" : "text-gray-300"}`}>{todayTasks.length}<span className="text-xs font-normal text-gray-400 ml-0.5">件</span></p>
@@ -263,10 +255,6 @@ export default function DashboardClient({
                 <div className={`bg-white rounded-xl border px-4 py-3 ${pendingCount > 0 ? "border-yellow-200" : "border-gray-200"}`}>
                   <p className="text-[10px] font-semibold text-gray-400 mb-1">確認待ち</p>
                   <p className={`text-2xl font-bold tabular-nums ${pendingCount > 0 ? "text-yellow-600" : "text-gray-300"}`}>{pendingCount}<span className="text-xs font-normal text-gray-400 ml-0.5">件</span></p>
-                </div>
-                <div className="bg-white rounded-xl border border-orange-200 px-4 py-3">
-                  <p className="text-[10px] font-semibold text-gray-400 mb-1">告示まで</p>
-                  <p className="text-2xl font-bold tabular-nums text-orange-500">{announceDiff}<span className="text-xs font-normal text-gray-400 ml-0.5">日</span></p>
                 </div>
               </div>
             </div>
@@ -290,11 +278,6 @@ export default function DashboardClient({
                     <div className="divide-y divide-gray-50">
                       {actionItems.map(({ task, reason }, i) => {
                         const rc = REASON_CONFIG[reason];
-                        let hint: string | null = null;
-                        try {
-                          const crit = JSON.parse(task.playbook_criteria || "[]");
-                          if (Array.isArray(crit) && crit.length > 0) hint = crit[0].a;
-                        } catch { /* ignore */ }
                         return (
                           <Link key={task.id} href={`/tasks/${task.id}`}>
                             <div className={`flex items-start gap-2 px-2 py-3.5 hover:bg-gray-50/80 transition group ${rc.bg}`}>
@@ -306,12 +289,6 @@ export default function DashboardClient({
                                 </div>
                                 <p className="text-sm font-semibold text-gray-800 whitespace-nowrap">{task.title}</p>
                                 <p className="text-[10px] text-gray-400 mt-0.5">{task.category}</p>
-                                {hint && (
-                                  <p className="text-[10px] text-indigo-500 mt-1.5 flex items-start gap-1">
-                                    <span className="shrink-0">💡</span>
-                                    <span className="line-clamp-1">{hint}</span>
-                                  </p>
-                                )}
                               </div>
                               {task.due_date && (
                                 <span className={`text-[10px] tabular-nums font-semibold shrink-0 mt-1 ${rc.text}`}>
@@ -611,14 +588,6 @@ export default function DashboardClient({
                     const diff = task.due_date
                       ? Math.round((new Date(task.due_date + "T00:00:00").getTime() - new Date(today + "T00:00:00").getTime()) / 86400000)
                       : null;
-                    let hint: string | null = null;
-                    if (task.playbook_criteria) {
-                      try {
-                        const crit = JSON.parse(task.playbook_criteria);
-                        if (Array.isArray(crit) && crit.length > 0) hint = crit[0].a;
-                      } catch { /* ignore */ }
-                    }
-                    const { pitfalls, conditions } = getPlaybookCounts(task);
                     const accentColor =
                       task.status === "完了"    ? "#10b981" :
                       task.status === "進行中"  ? "#3b82f6" :
@@ -653,19 +622,7 @@ export default function DashboardClient({
                                 : isOverdue ? "text-red-600 font-semibold"
                                 : "text-gray-800"
                               }`}>{task.title}</span>
-                              {task.status !== "完了" && (pitfalls > 0 || conditions > 0) && (
-                                <div className="flex items-center gap-1 shrink-0">
-                                  {pitfalls > 0 && <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-red-50 text-red-500 border border-red-100">⚠️{pitfalls}</span>}
-                                  {conditions > 0 && <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-emerald-50 text-emerald-600 border border-emerald-100">✅{conditions}</span>}
-                                </div>
-                              )}
                             </div>
-                            {hint && task.status !== "完了" && (
-                              <p className="text-[11px] text-indigo-500 mt-1.5 flex items-start gap-1">
-                                <span className="shrink-0">💡</span>
-                                <span className="line-clamp-1">{hint}</span>
-                              </p>
-                            )}
                           </div>
 
                           {/* Right: date + countdown */}
@@ -821,10 +778,6 @@ export default function DashboardClient({
               <div className="flex items-center gap-1.5">
                 <span className="w-8 h-3.5 rounded-full shrink-0 border border-emerald-400" style={{ background: "repeating-linear-gradient(45deg,rgba(16,185,129,.18),rgba(16,185,129,.18) 3px,rgba(209,250,229,.6) 3px,rgba(209,250,229,.6) 9px)" }} />
                 <span className="text-[11px] text-emerald-700 font-semibold">完了</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-8 h-3.5 rounded-full shrink-0 bg-orange-50 border border-orange-300" />
-                <span className="text-[11px] text-orange-700 font-semibold">サブ担当</span>
               </div>
               <div className="ml-auto flex items-center gap-1.5 shrink-0">
                 <span className="text-[11px] text-gray-500">完了タスクを表示</span>

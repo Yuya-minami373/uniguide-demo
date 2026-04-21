@@ -213,6 +213,10 @@ export default function TaskDetailClient({ task, user, manual, nextTask, kians =
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [memoExpanded, setMemoExpanded] = useState(false);
   const [kianOpen, setKianOpen] = useState(true);
+  const [conditionsOpen, setConditionsOpen] = useState(true);
+  const [pitfallsOpen, setPitfallsOpen] = useState(false);
+  const [criteriaOpen, setCriteriaOpen] = useState(false);
+  const [tipOpen, setTipOpen] = useState(false);
   const [kianStatuses, setKianStatuses] = useState<Record<number, string>>(
     () => Object.fromEntries(kians.map(k => [k.id, k.status]))
   );
@@ -612,37 +616,16 @@ export default function TaskDetailClient({ task, user, manual, nextTask, kians =
             {hasGuide ? (
               <div className="space-y-4">
 
-                {/* 1. チェックポイント */}
-                {pitfalls.length > 0 && (
-                  <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="flex items-center gap-2.5 px-5 py-3 border-b border-gray-100 bg-gray-50/50">
-                      <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center">
-                        <IconShield className="w-3.5 h-3.5 text-red-600" />
-                      </div>
-                      <h4 className="text-sm font-bold text-gray-800">チェックポイント</h4>
-                      <span className="text-[11px] text-gray-400">よくある失敗・見落とし</span>
-                    </div>
-                    <div className="divide-y divide-gray-50">
-                      {pitfalls.map((p, i) => {
-                        const sev = SEVERITY_STYLE[p.severity] ?? SEVERITY_STYLE.warning;
-                        return (
-                          <div key={i} className="flex items-start gap-3 px-5 py-3.5">
-                            <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${sev.dot}`} />
-                            <div className="flex-1 min-w-0">
-                              <span className={`text-[10px] font-bold uppercase tracking-wider ${sev.text}`}>{sev.label}</span>
-                              <p className="text-sm text-gray-700 leading-relaxed mt-0.5">{p.text}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-                )}
-
-                {/* 2. 着手条件 */}
+                {/* 1. 着手条件（最上位・デフォルト開） */}
                 {conditions.length > 0 && (
                   <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="flex items-center gap-2.5 px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+                    <button
+                      onClick={() => setConditionsOpen(v => !v)}
+                      className="flex items-center gap-2.5 px-5 py-3 border-b border-gray-100 bg-gray-50/50 w-full text-left hover:bg-gray-50 transition"
+                    >
+                      <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform shrink-0 ${conditionsOpen ? "" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                       <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${allChecked ? "bg-emerald-100" : "bg-orange-100"}`}>
                         {allChecked
                           ? <IconCheckCircle className="w-3.5 h-3.5 text-emerald-600" />
@@ -660,84 +643,141 @@ export default function TaskDetailClient({ task, user, manual, nextTask, kians =
                       }`}>
                         {checkedCount}/{conditions.length}
                       </span>
-                    </div>
-                    <div className="p-3 space-y-1">
-                      {conditions.map((c, i) => {
-                        const checked = checkedConditions[i] ?? false;
-                        return (
-                          <button
-                            key={i}
-                            onClick={() => toggleCondition(i)}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
-                              checked
-                                ? "bg-emerald-50/70"
-                                : "hover:bg-gray-50"
-                            }`}
-                          >
-                            <div className={`w-4 h-4 rounded flex-shrink-0 flex items-center justify-center transition-all border ${
-                              checked
-                                ? "bg-emerald-500 border-emerald-500"
-                                : "bg-white border-gray-300"
-                            }`}>
-                              {checked && (
-                                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
+                    </button>
+                    {conditionsOpen && (
+                      <>
+                        <div className="p-3 space-y-1">
+                          {conditions.map((c, i) => {
+                            const checked = checkedConditions[i] ?? false;
+                            return (
+                              <button
+                                key={i}
+                                onClick={() => toggleCondition(i)}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
+                                  checked
+                                    ? "bg-emerald-50/70"
+                                    : "hover:bg-gray-50"
+                                }`}
+                              >
+                                <div className={`w-4 h-4 rounded flex-shrink-0 flex items-center justify-center transition-all border ${
+                                  checked
+                                    ? "bg-emerald-500 border-emerald-500"
+                                    : "bg-white border-gray-300"
+                                }`}>
+                                  {checked && (
+                                    <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                                <span className={`text-sm transition-colors ${checked ? "text-gray-400 line-through" : "text-gray-700"}`}>
+                                  {c}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {allChecked && (
+                          <div className="px-5 pb-3">
+                            <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium bg-emerald-50 rounded-lg px-3 py-2">
+                              <IconCheckCircle className="w-3.5 h-3.5" />
+                              すべての着手条件を確認しました
                             </div>
-                            <span className={`text-sm transition-colors ${checked ? "text-gray-400 line-through" : "text-gray-700"}`}>
-                              {c}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {allChecked && (
-                      <div className="px-5 pb-3">
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium bg-emerald-50 rounded-lg px-3 py-2">
-                          <IconCheckCircle className="w-3.5 h-3.5" />
-                          すべての着手条件を確認しました
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </section>
+                )}
+
+                {/* 2. チェックポイント（デフォルト閉） */}
+                {pitfalls.length > 0 && (
+                  <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <button
+                      onClick={() => setPitfallsOpen(v => !v)}
+                      className="flex items-center gap-2.5 px-5 py-3 border-b border-gray-100 bg-gray-50/50 w-full text-left hover:bg-gray-50 transition"
+                    >
+                      <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform shrink-0 ${pitfallsOpen ? "" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center">
+                        <IconShield className="w-3.5 h-3.5 text-red-600" />
+                      </div>
+                      <h4 className="text-sm font-bold text-gray-800">チェックポイント</h4>
+                      <span className="text-[11px] text-gray-400">よくある失敗・見落とし</span>
+                      <span className="ml-auto text-[11px] font-bold text-gray-400">{pitfalls.length}件</span>
+                    </button>
+                    {pitfallsOpen && (
+                      <div className="divide-y divide-gray-50">
+                        {pitfalls.map((p, i) => {
+                          const sev = SEVERITY_STYLE[p.severity] ?? SEVERITY_STYLE.warning;
+                          return (
+                            <div key={i} className="flex items-start gap-3 px-5 py-3.5">
+                              <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${sev.dot}`} />
+                              <div className="flex-1 min-w-0">
+                                <span className={`text-[10px] font-bold uppercase tracking-wider ${sev.text}`}>{sev.label}</span>
+                                <p className="text-sm text-gray-700 leading-relaxed mt-0.5">{p.text}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {/* 3. 判断ガイド（デフォルト閉） */}
+                {criteria.length > 0 && (
+                  <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <button
+                      onClick={() => setCriteriaOpen(v => !v)}
+                      className="flex items-center gap-2.5 px-5 py-3 border-b border-gray-100 bg-gray-50/50 w-full text-left hover:bg-gray-50 transition"
+                    >
+                      <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform shrink-0 ${criteriaOpen ? "" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <IconScale className="w-3.5 h-3.5 text-blue-600" />
+                      </div>
+                      <h4 className="text-sm font-bold text-gray-800">判断ガイド</h4>
+                      <span className="text-[11px] text-gray-400">迷ったときの判断基準</span>
+                      <span className="ml-auto text-[11px] font-bold text-gray-400">{criteria.length}件</span>
+                    </button>
+                    {criteriaOpen && (
+                      <div className="p-4">
+                        <div className={`grid gap-3 ${criteria.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+                          {criteria.map((c, i) => (
+                            <div key={i} className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+                              <p className="text-sm font-semibold text-blue-600 mb-1.5">Q. {c.q}</p>
+                              {c.a && <p className="text-sm text-gray-600 leading-relaxed">{c.a}</p>}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
                   </section>
                 )}
 
-                {/* 3. 判断ガイド */}
-                {criteria.length > 0 && (
-                  <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="flex items-center gap-2.5 px-5 py-3 border-b border-gray-100 bg-gray-50/50">
-                      <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <IconScale className="w-3.5 h-3.5 text-blue-600" />
-                      </div>
-                      <h4 className="text-sm font-bold text-gray-800">判断ガイド</h4>
-                      <span className="text-[11px] text-gray-400">迷ったときの判断基準</span>
-                    </div>
-                    <div className="p-4">
-                      <div className={`grid gap-3 ${criteria.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
-                        {criteria.map((c, i) => (
-                          <div key={i} className="rounded-lg border border-gray-100 bg-gray-50/50 p-4">
-                            <p className="text-sm font-semibold text-blue-600 mb-1.5">Q. {c.q}</p>
-                            {c.a && <p className="text-sm text-gray-600 leading-relaxed">{c.a}</p>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </section>
-                )}
-
-                {/* 4. ひとことポイント */}
+                {/* 4. ひとことポイント（デフォルト閉） */}
                 {task.playbook_tip && (
                   <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="flex items-start gap-3 px-5 py-4">
-                      <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                    <button
+                      onClick={() => setTipOpen(v => !v)}
+                      className="flex items-center gap-2.5 px-5 py-3 border-b border-gray-100 bg-gray-50/50 w-full text-left hover:bg-gray-50 transition"
+                    >
+                      <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform shrink-0 ${tipOpen ? "" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
                         <IconLightBulb className="w-3.5 h-3.5 text-blue-600" />
                       </div>
-                      <div>
-                        <p className="text-[11px] font-bold text-blue-600 tracking-wider mb-1">ポイント</p>
+                      <h4 className="text-sm font-bold text-gray-800">ひとことポイント</h4>
+                    </button>
+                    {tipOpen && (
+                      <div className="px-5 py-4">
                         <p className="text-sm text-gray-700 leading-relaxed">{task.playbook_tip}</p>
                       </div>
-                    </div>
+                    )}
                   </section>
                 )}
 

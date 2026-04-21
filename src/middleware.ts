@@ -13,10 +13,11 @@ export function middleware(req: NextRequest) {
     if (scheme === "Basic" && encoded) {
       const decoded = atob(encoded);
       const [user, pass] = decoded.split(":");
-      if (
-        user === process.env.BASIC_AUTH_USER &&
-        pass === process.env.BASIC_AUTH_PASS
-      ) {
+      const credentials = [
+        { user: process.env.BASIC_AUTH_USER, pass: process.env.BASIC_AUTH_PASS },
+        { user: process.env.BASIC_AUTH_USER_2, pass: process.env.BASIC_AUTH_PASS_2 },
+      ].filter((c) => c.user && c.pass);
+      if (credentials.some((c) => c.user === user && c.pass === pass)) {
         return NextResponse.next();
       }
     }

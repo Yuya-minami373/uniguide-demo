@@ -9,3 +9,5 @@ data/*.db
 senkan.db
 .vercel
 .env*.local
+.env.production
+.env.development

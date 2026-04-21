@@ -456,7 +456,18 @@ function DailyTab({ dailyReports, date }: { dailyReports: DailyReport[]; date: s
             {report.summary && (
               <div className="mb-4">
                 <p className="text-[11px] font-bold text-gray-500 mb-1.5">特記事項まとめ</p>
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-lg px-4 py-3">{report.summary}</p>
+                <ul className="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg px-4 py-3 space-y-1">
+                  {report.summary
+                    .split(/\r?\n/)
+                    .map(line => line.replace(/^[\s]*[・\-*•][\s]*/, "").trim())
+                    .filter(line => line.length > 0)
+                    .map((line, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-gray-400 shrink-0 leading-relaxed">・</span>
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                </ul>
               </div>
             )}
 
