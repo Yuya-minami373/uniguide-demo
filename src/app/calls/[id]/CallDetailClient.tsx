@@ -189,7 +189,7 @@ export default function CallDetailClient({ user, category }: Props) {
           <h1 className="text-base font-bold text-slate-800">{category.name}</h1>
         </div>
 
-        <div className="px-4 py-4 flex gap-4 h-full">
+        <div className="px-4 py-4 flex flex-col lg:flex-row gap-4 h-full">
 
           {/* Left: Manual */}
           <div className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-sm p-5 overflow-y-auto">
@@ -202,7 +202,7 @@ export default function CallDetailClient({ user, category }: Props) {
           </div>
 
           {/* Right: Sub category + Duration */}
-          <div className="w-72 shrink-0 flex flex-col gap-4">
+          <div className="w-full lg:w-72 shrink-0 flex flex-col gap-4">
 
           {/* Sub category（その他のみ） */}
           {isOther && (

@@ -34,7 +34,7 @@ export default function FlowOverview({ tasks, onCategoryClick }: Props) {
       </div>
 
       {/* Category cards grid */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {CATEGORY_ORDER.map(cat => {
           const catColor = CATEGORY_COLORS[cat];
           const catTasks = tasks

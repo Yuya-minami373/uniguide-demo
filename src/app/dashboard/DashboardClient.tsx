@@ -238,8 +238,8 @@ export default function DashboardClient({
           <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#f8fafc" }}>
 
             {/* ── KPIバー ── */}
-            <div className="px-5 pt-4">
-              <div className="grid grid-cols-4 gap-3">
+            <div className="px-3 md:px-5 pt-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className={`bg-white rounded-xl border px-4 py-3 ${todayTasks.length > 0 ? "border-red-200" : "border-gray-200"}`}>
                   <p className="text-[10px] font-semibold text-gray-400 mb-1">今日期限</p>
                   <p className={`text-2xl font-bold tabular-nums ${todayTasks.length > 0 ? "text-red-600" : "text-gray-300"}`}>{todayTasks.length}<span className="text-xs font-normal text-gray-400 ml-0.5">件</span></p>
@@ -451,7 +451,7 @@ export default function DashboardClient({
           <div className="flex-1 flex min-w-0 overflow-hidden">
 
             {/* Left: Category sidebar */}
-            <div className="w-[260px] shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
+            <div className="w-[200px] lg:w-[260px] shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
               <div className="px-4 py-4 border-b border-gray-100">
                 <h2 className="text-sm font-bold text-gray-800">Myプロジェクト</h2>
                 <p className="text-[11px] text-gray-400 mt-0.5">
@@ -1085,7 +1085,7 @@ export default function DashboardClient({
                 </div>
 
                 {/* ── フェーズカラム ── */}
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {phases.map(phase => {
                     const byCategory: Record<string, Task[]> = {};
                     phase.tasks.forEach(t => {

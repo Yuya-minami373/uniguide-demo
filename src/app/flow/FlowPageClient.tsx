@@ -28,13 +28,13 @@ export default function FlowPageClient({ session, tasks, demoMode = false }: Pro
     <AppShell user={session} demoMode={demoMode}>
       <div className="flex-1 overflow-y-auto">
         {/* Header */}
-        <div className="px-8 pt-6 pb-4 border-b border-gray-100 bg-white">
+        <div className="px-4 md:px-8 pt-6 pb-4 border-b border-gray-100 bg-white">
           <h1 className="text-xl font-bold text-gray-900">業務フロー</h1>
           <p className="text-sm text-gray-500 mt-0.5">選挙業務の全体の流れとカテゴリ別の詳細フロー</p>
         </div>
 
         {/* Content */}
-        <div className="px-8 py-6">
+        <div className="px-4 md:px-8 py-6">
           {flowView === "overview" ? (
             <FlowOverview
               tasks={tasks}

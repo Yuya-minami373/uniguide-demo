@@ -80,7 +80,7 @@ export default function ManualsClient({ session, manuals }: Props) {
     return (
       <AppShell user={session}>
         <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#f0f5ff" }}>
-          <div className="px-6 py-5 max-w-[800px]">
+          <div className="px-4 md:px-6 py-5 max-w-[800px]">
             <button
               onClick={() => setSelectedManual(null)}
               className="inline-flex items-center gap-1 text-gray-400 hover:text-gray-600 text-xs mb-4 transition"

@@ -76,7 +76,7 @@ export default function CallsClient({ user }: Props) {
               <span className="text-slate-400 text-sm">読み込み中...</span>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {categories.map((cat, idx) => {
                 const color = CATEGORY_COLORS[idx % CATEGORY_COLORS.length];
                 return (

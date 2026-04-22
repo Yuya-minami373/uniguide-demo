@@ -85,7 +85,7 @@ export default function KianClient({ user, kians }: Props) {
         </div>
 
         {/* Content */}
-        <div className="px-6 py-4 space-y-4">
+        <div className="px-3 md:px-6 py-4 space-y-4">
           {catNames.map(cat => {
             const items = categories[cat];
             const catDecided = items.filter(k => k.status === "決裁済").length;

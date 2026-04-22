@@ -79,7 +79,7 @@ export default function MapClient({ user, stations, cityConfig, cityConfigs }: P
     <AppShell user={user}>
       <div className="flex-1 flex overflow-hidden">
         {/* Left: Controls + List */}
-        <div className="w-[320px] shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
+        <div className="w-[260px] lg:w-[320px] shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
           {/* Header with city selector */}
           <div className="px-4 py-3 border-b border-gray-100">
             <div className="flex items-center justify-between gap-2">

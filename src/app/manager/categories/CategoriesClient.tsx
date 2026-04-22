@@ -102,7 +102,7 @@ export default function CategoriesClient({ session, tasks }: Props) {
           {/* Overall summary */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-5">
             <h2 className="font-bold text-gray-800 mb-4">全体進捗サマリー</h2>
-            <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
               {["未着手", "進行中", "確認待ち", "完了"].map((status) => {
                 const count = tasks.filter((t) => t.status === status).length;
                 const pct = totalTasks > 0 ? Math.round((count / totalTasks) * 100) : 0;
@@ -136,7 +136,7 @@ export default function CategoriesClient({ session, tasks }: Props) {
           </div>
 
           {/* Category cards grid */}
-          <div className="grid grid-cols-2 gap-4 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
             {categoryNames.map((category) => {
               const catTasks = categories[category];
               const done = catTasks.filter((t) => t.status === "完了").length;

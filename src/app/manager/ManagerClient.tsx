@@ -358,7 +358,7 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
               })()}
 
               {/* ② 要対応 + 進行中 + 完了タスク — 3カラム */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
                 {/* 要対応（着手遅れ + 期限アラート統合） */}
                 <div className={`rounded-2xl shadow-sm overflow-hidden ${(overdueUntouched.length > 0 || urgentTasks.length > 0) ? "bg-white border border-red-200" : "bg-white border border-gray-200"}`}>
@@ -531,9 +531,9 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
             };
 
             return (
-              <div className="px-6 py-3 space-y-4 flex-1 overflow-y-auto">
+              <div className="px-3 md:px-6 py-3 space-y-4 flex-1 overflow-y-auto">
                 {/* KPIカード */}
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3">
                     <p className="text-[10px] text-gray-400 mb-1">今日の受電</p>
                     <p className="text-2xl font-extrabold text-violet-600 tabular-nums">{callStats.todayTotal}<span className="text-sm font-normal text-gray-400 ml-1">件</span></p>
@@ -553,7 +553,7 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {/* カテゴリ別内訳 */}
                   <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
@@ -974,7 +974,7 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
                   </div>
 
                   {/* KPIs */}
-                  <div className="grid grid-cols-4 gap-3 mb-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                     {[
                       { label: "記録済みタスク数", value: `${filtered.length}`, unit: "件", sub: "次の担当者への引き継ぎ資料になります", subColor: "text-slate-400" },
                       { label: "稼働日数", value: `${activeDays}`, unit: "日間", sub: "完了が発生した実働日", subColor: "text-slate-400" },
@@ -1015,9 +1015,9 @@ export default function ManagerClient({ session, tasks, staffUsers, urgentTasks,
                 </div>
 
                 {/* 2-pane: カレンダー（左）+ タスク一覧（右・常時表示） */}
-                <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 320px" }}>
+                <div className="grid gap-4 grid-cols-1 lg:[grid-template-columns:1fr_320px]">
                   {/* Left: monthly grids */}
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {calMonths.map(({ year, month, label }) => {
                       const firstDow = new Date(year, month - 1, 1).getDay();
                       const daysInMonth = new Date(year, month, 0).getDate();

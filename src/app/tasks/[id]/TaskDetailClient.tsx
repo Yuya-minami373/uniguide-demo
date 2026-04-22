@@ -306,7 +306,7 @@ export default function TaskDetailClient({ task, user, manual, nextTask, kians =
       {/* ━━━ 完了モーダル ━━━ */}
       {showCompleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 px-7 py-6 w-[420px] flex flex-col gap-5">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 px-7 py-6 w-[420px] max-w-[92vw] flex flex-col gap-5">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center">
@@ -375,7 +375,7 @@ export default function TaskDetailClient({ task, user, manual, nextTask, kians =
       <div className="flex-1 flex min-w-0 overflow-hidden">
 
         {/* ━━━ Left: Task info panel ━━━ */}
-        <div className="w-[300px] shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-y-auto">
+        <div className="w-[240px] lg:w-[300px] shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-y-auto">
           {/* Back + Title */}
           <div className="px-5 pt-4 pb-3 border-b border-gray-100">
             <Link

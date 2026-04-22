@@ -176,7 +176,7 @@ export default function CrewDashboardClient({ session, demoMode = false, initial
     <AppShell user={session} demoMode={demoMode}>
       <div className="flex-1 overflow-y-auto">
         {/* Header (sticky) */}
-        <div className="sticky top-0 z-20 px-8 pt-6 pb-0 border-b border-gray-200 bg-white">
+        <div className="sticky top-0 z-20 px-4 md:px-8 pt-6 pb-0 border-b border-gray-200 bg-white">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-xl font-bold text-gray-900">UniPollクルー</h1>
@@ -212,7 +212,7 @@ export default function CrewDashboardClient({ session, demoMode = false, initial
         </div>
 
         {/* Tab Content */}
-        <div className="px-8 py-6">
+        <div className="px-4 md:px-8 py-6">
           {activeTab === "status" && (
             <StatusTab
               overview={overview}
@@ -266,7 +266,7 @@ function StatusTab({
   return (
     <>
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 px-5 py-4">
           <p className="text-[11px] text-gray-400 font-medium mb-1">稼働中投票所</p>
           <p className="text-2xl font-bold text-gray-900 tabular-nums">{activeLocations}<span className="text-sm text-gray-400 ml-1">/ {overview.length}</span></p>
@@ -282,7 +282,7 @@ function StatusTab({
       </div>
 
       {/* Two-column layout (equal width) */}
-      <div className="grid grid-cols-2 gap-6" style={{ minHeight: "calc(100vh - 340px)" }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={{ minHeight: "calc(100vh - 340px)" }}>
         {/* Left: Location Status List */}
         <div className="space-y-2">
           <h2 className="text-sm font-bold text-gray-700 mb-3">投票所一覧</h2>
@@ -502,7 +502,7 @@ function ClassificationTab({ classifications }: { classifications: Classificatio
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {(["A", "B", "C"] as const).map(cat => {
           const config = CATEGORY_CONFIG[cat];
           const items = grouped[cat];
